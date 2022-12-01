@@ -1,0 +1,22 @@
+APCA + WCAG 2
+text on background
+transparent text
+colour picker
+can change colour space in colour picker
+prevent colour picker from choosing inaccessible colour
+show interpolation gradient
+keyboard in/decrements colours like dev tools
+can input font-size
+can input weight
+suggest alternatives by lightening/darkening background/text
+what changed? tooltip
+have multiple text colours for comparing
+swap colours round
+
+https://www.w3.org/TR/WCAG22/
+https://w3c.github.io/silver/guidelines/
+https://git.apcacontrast.com/WEBTOOLS/APCA/
+https://webaim.org/resources/contrastchecker/
+https://accessible-colors.com/
+https://contrast-ratio.com/
+https://colorjs.io/
