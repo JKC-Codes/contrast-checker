@@ -8,32 +8,56 @@ inputForeground.addEventListener('input', handleColourInput);
 inputBackground.addEventListener('input', handleColourInput);
 
 function handleColourInput(event) {
-	const newColour = validateColour(event.target.value);
+	const parsedString = parseColour(event.target.value);
+	const colourString = validateColour(parsedString);
 	const field = event.target.id;
 
-	// foo
+	if(colourString === null) {
+		return;
+	}
+
+
+	// TODO
+	console.log({colourString, field});
+	if(field === 'input-foreground') {
+		temp(new Colour(colourString), new Colour(inputBackground.value || '#eee'));
+	}
+	else if(field === 'input-background') {
+		temp(new Colour(inputForeground.value || '#111'), new Colour(colourString));
+	}
+}
+
+function parseColour(colourString) {
+	colourString = colourString.trim();
+	const colourLength = colourString.length;
+
+	// If hex code without a #
+	if(new RegExp(`^[0-9a-f]{${colourLength}}$`, 'i').test(colourString)) {
+		switch(colourLength) {
+			// Expand 1 or 2 digit hex codes into full
+			case 1:
+			case 2:
+				colourString = colourString.repeat(3);
+
+			// Add # to start of hex codes
+			case 3:
+			case 4:
+			case 6:
+			case 8:
+				colourString = '#' + colourString;
+		}
+	}
+
+	return colourString;
 }
 
 function validateColour(colourString) {
-	colourString = colourString.trim();
-
-	// Expand 1 or 2 digit hex codes into full
-	const regexHexStart = String.raw`^(?:[0-9a-f]{2}|[0-9a-f]{1})$`;
-	if(new RegExp(regexHexStart, 'i').test(colourString)) {
-		colourString = colourString.repeat(3);
-	}
-
-	// Allow hex codes without a # at the start
-	const regexHexFull = String.raw`^(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})$`;
-	if(new RegExp(regexHexFull, 'i').test(colourString)) {
-		colourString = '#' + colourString;
-	}
-
 	try {
-		console.log(colourString);
+		Colour.parse(colourString);
+		return colourString;
 	}
 	catch(error) {
-		console.warn(error);
+		return null;
 	}
 }
 
@@ -43,8 +67,8 @@ function validateColour(colourString) {
 
 
 
-// function temp(colourForeground, colourBackground) {
-// 	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
-// 	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
-// 	output.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
-// }
+function temp(colourForeground, colourBackground) {
+	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
+	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
+	output.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
+}
