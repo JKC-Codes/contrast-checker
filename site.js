@@ -17,13 +17,13 @@ function handleColourInput(event) {
 	}
 
 
-	// TODO
+	// Temp
 	console.log({colourString, field});
 	if(field === 'input-foreground') {
-		temp(new Colour(colourString), new Colour(inputBackground.value || '#eee'));
+		temp(new Colour(colourString), new Colour(parseColour(inputBackground.value) || '#eee'));
 	}
 	else if(field === 'input-background') {
-		temp(new Colour(inputForeground.value || '#111'), new Colour(colourString));
+		temp(new Colour(parseColour(inputForeground.value) || '#111'), new Colour(colourString));
 	}
 }
 
@@ -31,15 +31,20 @@ function parseColour(colourString) {
 	colourString = colourString.trim();
 	const colourLength = colourString.length;
 
+	// If short hex code
+	if(colourString.startsWith('#') && colourLength < 4) {
+		// Expand 1 or 2 digit hex codes into full
+		colourString = '#' + colourString.slice(1).repeat(3);
+	}
 	// If hex code without a #
-	if(new RegExp(`^[0-9a-f]{${colourLength}}$`, 'i').test(colourString)) {
+	else if(new RegExp(`^[0-9a-f]{${colourLength}}$`, 'i').test(colourString)) {
 		switch(colourLength) {
 			// Expand 1 or 2 digit hex codes into full
 			case 1:
 			case 2:
 				colourString = colourString.repeat(3);
 
-			// Add # to start of hex codes
+			// Add # to start
 			case 3:
 			case 4:
 			case 6:
