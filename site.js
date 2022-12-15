@@ -17,14 +17,9 @@ function handleColourInput(event) {
 	}
 
 
-	// Temp
+
 	console.log({colourString, field});
-	if(field === 'input-foreground') {
-		temp(new Colour(colourString), new Colour(parseColour(inputBackground.value) || '#eee'));
-	}
-	else if(field === 'input-background') {
-		temp(new Colour(parseColour(inputForeground.value) || '#111'), new Colour(colourString));
-	}
+	temp(colourString, field);
 }
 
 function parseColour(colourString) {
@@ -59,6 +54,12 @@ function parseColour(colourString) {
 function validateColour(colourString) {
 	try {
 		Colour.parse(colourString);
+
+		// Account for bug in ColorJS which accepts 7 digit hex codes
+		if(colourString.length === 8 && colourString.startsWith('#')) {
+			throw new Error();
+		}
+
 		return colourString;
 	}
 	catch(error) {
@@ -72,7 +73,17 @@ function validateColour(colourString) {
 
 
 
-function temp(colourForeground, colourBackground) {
+function temp(colourString, field) {
+	let colourForeground = new Colour(parseColour(inputForeground.value) || '#111');
+	let colourBackground = new Colour(parseColour(inputBackground.value) || '#eee');
+
+	if(field === 'input-foreground') {
+		colourForeground = new Colour(colourString);
+	}
+	else if(field === 'input-background') {
+		colourBackground = new Colour(colourString);
+	}
+
 	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
 	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
 	output.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
