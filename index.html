@@ -12,13 +12,30 @@
 		<h1>Contrast Checker</h1>
 	</header>
 	<main>
-		<label>Text:
-			<input id="input-foreground">
+		<label>Text colour:
+			<input id="input-colour-foreground">
 		</label>
-		<p>Contrast: <output id="output"></output></p>
-		<label>Background:
-			<input id="input-background">
+		<label>Background colour:
+			<input id="input-colour-background" value="White">
 		</label>
+		<label>Font size:
+			<input id="input-font-size" type="number" value="16" min="1">
+		</label>
+		<label>Font weight:
+			<select id="input-font-weight">
+				<option value="100">Thin</option>
+				<option value="200">Extra Light</option>
+				<option value="300">Light</option>
+				<option value="400" selected>Normal</option>
+				<option value="500">Medium</option>
+				<option value="600">Semi Bold</option>
+				<option value="700">Bold</option>
+				<option value="800">Extra Bold</option>
+				<option value="900">Black</option>
+				<option value="950">Extra Black</option>
+			</select>
+		</label>
+		<p>Contrast: <output id="output-result"></output></p>
 	</main>
 	<footer>
 		<small>&copy; John Kemp-Cruz 2022&ndash;2023</small>
