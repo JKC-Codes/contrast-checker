@@ -1,25 +1,82 @@
 import Colour from "/color.js";
 
-const inputForeground = document.querySelector('#input-foreground');
-const inputBackground = document.querySelector('#input-background');
-const output = document.querySelector('#output');
+const inputColourForeground = document.querySelector('#input-colour-foreground');
+const inputColourBackground = document.querySelector('#input-colour-background');
+const inputFontSize = document.querySelector('#input-font-size');
+const inputFontWeight = document.querySelector('#input-font-weight');
+const outputResult = document.querySelector('#output-result');
 
-inputForeground.addEventListener('input', handleColourInput);
-inputBackground.addEventListener('input', handleColourInput);
+const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
 
-function handleColourInput(event) {
-	const parsedString = parseColour(event.target.value);
-	const colourString = validateColour(parsedString);
-	const field = event.target.id;
 
-	if(colourString === null) {
-		return;
+const state = {
+	_colourForeground: null,
+	_colourBackground: new Colour('white'),
+	_fontSize: 16,
+	_fontWeight: 400,
+	_history: [],
+
+	set colourForeground(value) {
+		console.log(value);
+		this._colourForeground = value;
+	},
+
+	set colourBackground(value) {
+		console.log(value);
+		this._colourBackground = value;
+	},
+
+	set fontSize(value) {
+		console.log(value);
+		this._fontSize = value;
+	},
+
+	set fontWeight(value) {
+		console.log(value);
+		this._fontWeight = value;
+	}
+}
+
+
+// TODO: update state with stored history
+
+inputColourForeground.addEventListener('input', handleColourInput.bind({state}));
+inputColourBackground.addEventListener('input', handleColourInput.bind({state}));
+inputFontSize.addEventListener('input', handleFontSizeInput.bind({state}));
+inputFontWeight.addEventListener('change', handleFontWeightInput.bind({state}));
+
+
+function handleColourInput(event, state = this.state) {
+	const {colourString} = parseColour(event.target.value);
+	let colour = validateColour(colourString);
+	let field;
+
+	if(colour !== null) {
+		colour = new Colour(colour);
 	}
 
+	if(event.target.id === 'input-colour-foreground') {
+		field = 'colourForeground';
+	}
+	else if(event.target.id === 'input-colour-background') {
+		field = 'colourBackground';
+	}
 
+	state[field] = colour;
+}
 
-	console.log({colourString, field});
-	temp(colourString, field);
+function handleFontSizeInput(event, state = this.state) {
+	const {number} = parseNumber(event.target.value);
+	const size = validateFontSize(number);
+
+	state.fontSize = size;
+}
+
+function handleFontWeightInput(event, state = this.state) {
+	const {number} = parseNumber(event.target.value);
+	const weight = validateFontWeight(number);
+
+	state.fontWeight = weight;
 }
 
 function parseColour(colourString) {
@@ -48,7 +105,7 @@ function parseColour(colourString) {
 		}
 	}
 
-	return colourString;
+	return {colourString};
 }
 
 function validateColour(colourString) {
@@ -67,24 +124,52 @@ function validateColour(colourString) {
 	}
 }
 
+function parseNumber(numberString) {
+	numberString = numberString.trim();
+	const regexNumberString = new RegExp(`((?<!${regexNumber}))(${regexNumber})([^]*)`);
+	const resultArray = regexNumberString.exec(numberString) || ['', '', null, ''];
+	let number = Number.parseFloat(resultArray[2]);
 
-
-
-
-
-
-function temp(colourString, field) {
-	let colourForeground = new Colour(parseColour(inputForeground.value) || '#111');
-	let colourBackground = new Colour(parseColour(inputBackground.value) || '#eee');
-
-	if(field === 'input-foreground') {
-		colourForeground = new Colour(colourString);
-	}
-	else if(field === 'input-background') {
-		colourBackground = new Colour(colourString);
+	if(isNaN(number)) {
+		number = null;
 	}
 
-	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
-	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
-	output.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
+	return {
+		number: number,
+		before: resultArray[1],
+		after: resultArray[3]
+	}
 }
+
+function validateFontSize(number) {
+	if(!Number.isInteger(number) || number < 1) {
+		number = null;
+	}
+
+	return number;
+}
+
+function validateFontWeight(number) {
+	if(Number.isNaN(number) || number < 1 || number > 1000) {
+		number = null;
+	}
+
+	return number;
+}
+
+
+
+
+
+
+
+
+
+
+// function temp(colourForeground, colourBackground) {
+// 	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
+// 	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
+// 	outputResult.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
+// }
+
+// temp(ContrastCheck.colourForeground, ContrastCheck.colourBackground);
