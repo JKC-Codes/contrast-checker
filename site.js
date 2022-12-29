@@ -1,5 +1,6 @@
 import Colour from "/color.js";
 
+
 const inputColourForeground = document.querySelector('#input-colour-foreground');
 const inputColourBackground = document.querySelector('#input-colour-background');
 const inputFontSize = document.querySelector('#input-font-size');
@@ -9,7 +10,7 @@ const outputResult = document.querySelector('#output-result');
 const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
 
 
-const state = {
+const State = {
 	_colourForeground: null,
 	_colourBackground: new Colour('white'),
 	_fontSize: 16,
@@ -40,40 +41,62 @@ const state = {
 
 // TODO: update state with stored history
 
-inputColourForeground.addEventListener('input', handleColourInput.bind({state}));
-inputColourBackground.addEventListener('input', handleColourInput.bind({state}));
-inputFontSize.addEventListener('input', handleFontSizeInput.bind({state}));
-inputFontWeight.addEventListener('change', handleFontWeightInput.bind({state}));
+inputColourForeground.addEventListener('input', handleColourInputEvent(State));
+inputColourBackground.addEventListener('input', handleColourInputEvent(State));
+inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
+inputFontWeight.addEventListener('change', handleFontWeightInputEvent(State));
 
 
-function handleColourInput(event, state = this.state) {
-	const {colourString} = parseColour(event.target.value);
+function handleColourInputEvent(state) {
+	return function(event) {
+		let field;
+
+		if(event.target.id === 'input-colour-foreground') {
+			field = 'colourForeground';
+		}
+		else if(event.target.id === 'input-colour-background') {
+			field = 'colourBackground';
+		}
+		else {
+			throw new Error('Field input ID not recognised');
+		}
+
+		handleColourInput(event.target.value, field, state);
+	}
+}
+
+function handleColourInput(value, field, state) {
+	const {colourString} = parseColour(value);
 	let colour = validateColour(colourString);
-	let field;
 
 	if(colour !== null) {
 		colour = new Colour(colour);
 	}
 
-	if(event.target.id === 'input-colour-foreground') {
-		field = 'colourForeground';
-	}
-	else if(event.target.id === 'input-colour-background') {
-		field = 'colourBackground';
-	}
-
 	state[field] = colour;
 }
 
-function handleFontSizeInput(event, state = this.state) {
-	const {number} = parseNumber(event.target.value);
+function handleFontSizeInputEvent(state) {
+	return function(event) {
+		handleFontSizeInput(event.target.value, state);
+	}
+}
+
+function handleFontSizeInput(value, state) {
+	const {number} = parseNumber(value);
 	const size = validateFontSize(number);
 
 	state.fontSize = size;
 }
 
-function handleFontWeightInput(event, state = this.state) {
-	const {number} = parseNumber(event.target.value);
+function handleFontWeightInputEvent(state) {
+	return function(event) {
+		handleFontWeightInput(event.target.value, state);
+	}
+}
+
+function handleFontWeightInput(value, state) {
+	const {number} = parseNumber(value);
 	const weight = validateFontWeight(number);
 
 	state.fontWeight = weight;
