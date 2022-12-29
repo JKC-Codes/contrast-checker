@@ -8,6 +8,7 @@ const inputFontWeight = document.querySelector('#input-font-weight');
 const outputResult = document.querySelector('#output-result');
 
 const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
+const symbolDisplayedValue = Symbol('displayedValue');
 
 
 const State = {
@@ -17,33 +18,51 @@ const State = {
 	_fontWeight: 400,
 	_history: [],
 
+	get colourForeground() {
+		return this._colourForeground;
+	},
 	set colourForeground(value) {
-		console.log(value);
+		let oldValue = this._colourForeground;
 		this._colourForeground = value;
+		handleStateChange(oldValue, value, this);
 	},
 
+	get colourBackground() {
+		return this._colourBackground;
+	},
 	set colourBackground(value) {
-		console.log(value);
+		let oldValue = this._colourBackground;
 		this._colourBackground = value;
+		handleStateChange(oldValue, value, this);
 	},
 
+	get fontSize() {
+		return this._fontSize;
+	},
 	set fontSize(value) {
-		console.log(value);
+		let oldValue = this._fontSize;
 		this._fontSize = value;
+		handleStateChange(oldValue, value, this);
 	},
 
+	get fontWeight() {
+		return this._fontWeight;
+	},
 	set fontWeight(value) {
-		console.log(value);
+		let oldValue = this._fontWeight;
 		this._fontWeight = value;
+		handleStateChange(oldValue, value, this);
 	}
 }
 
 
-init();
+init(State);
 
 
-function init() {
-	// TODO: update state with stored history
+function init(state) {
+	state._colourBackground[symbolDisplayedValue] = 'White';
+	// TODO: update state with stored history or defaults
+	updateUI(state);
 
 	inputColourForeground.addEventListener('input', handleColourInputEvent(State));
 	inputColourBackground.addEventListener('input', handleColourInputEvent(State));
@@ -75,6 +94,7 @@ function handleColourInput(value, field, state) {
 
 	if(colour !== null) {
 		colour = new Colour(colour);
+		colour[symbolDisplayedValue] = colourString;
 	}
 
 	state[field] = colour;
@@ -184,6 +204,62 @@ function validateFontWeight(number) {
 	return number;
 }
 
+function handleStateChange(oldValue, newValue, state) {
+	if(isSameValue(oldValue, newValue)) {
+		return;
+	}
+
+	updateUI(state);
+}
+
+function isSameValue(oldValue, newValue) {
+	if(
+		oldValue === newValue ||
+		oldValue !== null &&
+		newValue !== null &&
+		oldValue.xyz_d65.x === newValue.xyz_d65.x &&
+		oldValue.xyz_d65.y === newValue.xyz_d65.y &&
+		oldValue.xyz_d65.z === newValue.xyz_d65.z
+	) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+function updateUI(state) {
+	const contrastDetails = getContrastDetails(state);
+
+	updateUIContrastBooleanText(contrastDetails);
+	temp();
+}
+
+function updateUIContrastBooleanText(contrastDetails) {
+	let contrastBooleanText = '';
+
+	if(contrastDetails.colourPasses === true) {
+		contrastBooleanText = 'Pass';
+	}
+	else if(contrastDetails.colourPasses === false) {
+		contrastBooleanText = 'Fail';
+	}
+
+	outputResult.textContent = contrastBooleanText;
+}
+
+function getContrastDetails(state) {
+	// TODO: calculate contrast pass/fail based on colours, font-size and font-weight
+	return {
+		colourPasses: true,
+		// largerFont
+		// heavierWeight
+		// darkerText
+		// darkerBackground
+		// lighterText
+		// lighterBackground
+	}
+}
 
 
 
@@ -193,10 +269,21 @@ function validateFontWeight(number) {
 
 
 
-// function temp(colourForeground, colourBackground) {
-// 	const contrastWCAG = colourBackground.contrast(colourForeground, 'WCAG21');
-// 	const contrastAPCA = Math.abs(colourBackground.contrast(colourForeground, 'APCA'));
-// 	outputResult.textContent = `WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
-// }
 
-// temp(ContrastCheck.colourForeground, ContrastCheck.colourBackground);
+function temp() {
+	const states = new Set([
+		State.colourForeground,
+		State.colourBackground,
+		State.fontSize,
+		State.fontWeight
+	]);
+
+	if(states.has(null)) {
+		return;
+	}
+
+	const contrastWCAG = State.colourBackground.contrast(State.colourForeground, 'WCAG21');
+	const contrastAPCA = Math.abs(State.colourBackground.contrast(State.colourForeground, 'APCA'));
+
+	outputResult.innerHTML += `<br><br>WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
+}
