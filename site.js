@@ -1,4 +1,4 @@
-import Colour from "/color.js";
+import Colour from "/colorjs.js";
 
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
@@ -39,13 +39,17 @@ const State = {
 }
 
 
-// TODO: update state with stored history
+init();
 
-inputColourForeground.addEventListener('input', handleColourInputEvent(State));
-inputColourBackground.addEventListener('input', handleColourInputEvent(State));
-inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
-inputFontWeight.addEventListener('change', handleFontWeightInputEvent(State));
 
+function init() {
+	// TODO: update state with stored history
+
+	inputColourForeground.addEventListener('input', handleColourInputEvent(State));
+	inputColourBackground.addEventListener('input', handleColourInputEvent(State));
+	inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
+	inputFontWeight.addEventListener('change', handleFontWeightInputEvent(State));
+}
 
 function handleColourInputEvent(state) {
 	return function(event) {
