@@ -18,6 +18,8 @@ const State = {
 	_fontWeight: 400,
 	_history: [],
 
+	pendingStateChange: false,
+
 	get colourForeground() {
 		return this._colourForeground;
 	},
@@ -224,7 +226,13 @@ function handleStateChange(oldValue, newValue, state) {
 		return;
 	}
 
-	updateUI(state);
+	if(state.pendingStateChange === false) {
+		state.pendingStateChange = true;
+		requestAnimationFrame(() => {
+			updateUI(state);
+			state.pendingStateChange = false;
+		});
+	}
 }
 
 function isSameValue(oldValue, newValue) {
