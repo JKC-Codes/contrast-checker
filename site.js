@@ -61,7 +61,22 @@ init(State);
 
 function init(state) {
 	state._colourBackground[symbolDisplayedValue] = 'White';
-	// TODO: update state with stored history or defaults
+
+	// TODO: update state with stored history
+
+	if(inputColourForeground.value !== undefined) {
+		handleColourInput(inputColourForeground.value, 'colourForeground', state);
+	}
+	if(inputColourBackground.value !== undefined) {
+		handleColourInput(inputColourBackground.value, 'colourBackground', state);
+	}
+	if(inputFontSize.value !== undefined) {
+		handleFontSizeInput(inputFontSize.value, state);
+	}
+	if(inputFontWeight.value !== undefined) {
+		handleFontWeightInput(inputFontWeight.value, state);
+	}
+
 	updateUI(state);
 
 	inputColourForeground.addEventListener('input', handleColourInputEvent(State));
