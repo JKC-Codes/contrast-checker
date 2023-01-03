@@ -213,10 +213,16 @@ function handleStateChange(oldValue, newValue, state) {
 }
 
 function isSameValue(oldValue, newValue) {
-	if(
-		oldValue === newValue ||
-		oldValue !== null &&
-		newValue !== null &&
+	if(oldValue === newValue) {
+		return true;
+	}
+	else if(oldValue === null || newValue === null) {
+		return false;
+	}
+	else if(
+		typeof oldValue === 'object' &&
+		typeof newValue === 'object' &&
+		'xyz_d65' in oldValue && 'xyz_d65' in newValue &&
 		oldValue.xyz_d65.x === newValue.xyz_d65.x &&
 		oldValue.xyz_d65.y === newValue.xyz_d65.y &&
 		oldValue.xyz_d65.z === newValue.xyz_d65.z
