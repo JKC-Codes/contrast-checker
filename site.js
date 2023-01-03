@@ -20,6 +20,8 @@ const State = {
 
 	pendingStateChange: false,
 
+	criterionLevel: 'minimum',
+
 	get colourForeground() {
 		return this._colourForeground;
 	},
@@ -260,17 +262,17 @@ function isSameValue(oldValue, newValue) {
 function updateUI(state) {
 	const contrastDetails = getContrastDetails(state);
 
-	updateUIContrastBooleanText(contrastDetails);
+	updateUIContrastBooleanText(contrastDetails.colourPasses);
 	temp();
 }
 
-function updateUIContrastBooleanText(contrastDetails) {
+function updateUIContrastBooleanText(colourPasses) {
 	let contrastBooleanText = '';
 
-	if(contrastDetails.colourPasses === true) {
+	if(colourPasses === true) {
 		contrastBooleanText = 'Pass';
 	}
-	else if(contrastDetails.colourPasses === false) {
+	else if(colourPasses === false) {
 		contrastBooleanText = 'Fail';
 	}
 
@@ -278,16 +280,68 @@ function updateUIContrastBooleanText(contrastDetails) {
 }
 
 function getContrastDetails(state) {
-	// TODO: calculate contrast pass/fail based on colours, font-size and font-weight
-	return {
-		colourPasses: true,
-		// largerFont
-		// heavierWeight
-		// darkerText
-		// darkerBackground
-		// lighterText
-		// lighterBackground
+	const details = {
+		WCAGContrast: null,
+		APCAContrast: null,
+		colourPasses: null,
+		// largerFont: null,
+		// heavierWeight: null,
+		// darkerText: null,
+		// darkerBackground: null,
+		// lighterText: null,
+		// lighterBackground: null
+	};
+
+	if(
+		State.colourForeground !== null &&
+		State.colourBackground !== null &&
+		State.fontSize !== null &&
+		State.fontWeight !== null
+	) {
+		const WCAGDetails = getWCAGDetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
+		const APCADetails = getAPCADetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
+
+		details.WCAGContrast = WCAGDetails.score;
+		details.APCAContrast = APCADetails.score;
+		details.colourPasses = WCAGDetails.passes && APCADetails.passes;
 	}
+
+	return details;
+}
+
+function getWCAGDetails(foreground, background, size, weight, level) {
+	const score = background.contrast(foreground, 'WCAG21');
+	const isLargeText = size >= 24.00000000211674 /*18pt*/ || (size >= 18.66666666831302 /*14pt*/ && weight >= 700);
+	let minimumRequiredScore = 4.5;
+
+	if(level === 'minimum' && isLargeText) {
+		minimumRequiredScore = 3;
+	}
+	else if(level === 'enhanced' && !isLargeText) {
+		minimumRequiredScore = 7;
+	}
+
+	// TODO: detail alternatives if it fails
+
+	return {
+		score,
+		minimumRequiredScore,
+		passes: score >= minimumRequiredScore,
+		isLargeText
+	};
+}
+
+function getAPCADetails(foreground, background, size, weight, level) {
+	const score = Math.abs(background.contrast(foreground, 'APCA'));
+	let minimumRequiredScore = 65;
+
+	// TODO: detail pass/fail levels
+
+	return {
+		score,
+		minimumRequiredScore,
+		passes: score >= minimumRequiredScore
+	};
 }
 
 
