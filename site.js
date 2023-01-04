@@ -311,7 +311,7 @@ function getContrastDetails(state) {
 
 function getWCAGDetails(foreground, background, size, weight, level) {
 	const score = background.contrast(foreground, 'WCAG21');
-	const isLargeText = size >= 24.00000000211674 /*18pt*/ || (size >= 18.66666666831302 /*14pt*/ && weight >= 700);
+	const isLargeText = size >= 24 /*18pt*/ || (size >= 18.666666666666668 /*14pt*/ && weight >= 700);
 	let minimumRequiredScore = 4.5;
 
 	if(level === 'minimum' && isLargeText) {
