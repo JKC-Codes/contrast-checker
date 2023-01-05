@@ -208,7 +208,7 @@ function parseNumber(numberString) {
 }
 
 function validateFontSize(number) {
-	if(!Number.isInteger(number) || number < 1) {
+	if(number <= 0) {
 		number = null;
 	}
 
