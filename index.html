@@ -14,16 +14,16 @@
 	</header>
 	<main>
 		<label>Text colour:
-			<input id="input-colour-foreground" type="text">
+			<input id="input-colour-foreground" type="text" required spellcheck="false">
 		</label>
 		<label>Background colour:
-			<input id="input-colour-background" type="text" value="White">
+			<input id="input-colour-background" type="text" required spellcheck="false" value="White">
 		</label>
 		<label>Font size:
-			<input id="input-font-size" type="number" value="16" min="1" step="any">
+			<input id="input-font-size" type="number" required value="16" min="1" step="any">
 		</label>
 		<label>Font weight:
-			<select id="input-font-weight">
+			<select id="input-font-weight" required>
 				<option value="100">Thin</option>
 				<option value="200">Extra-light (Ultra-light)</option>
 				<option value="300">Light</option>
