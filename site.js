@@ -293,10 +293,10 @@ function getContrastDetails(state) {
 	};
 
 	if(
-		State.colourForeground !== null &&
-		State.colourBackground !== null &&
-		State.fontSize !== null &&
-		State.fontWeight !== null
+		state.colourForeground !== null &&
+		state.colourBackground !== null &&
+		state.fontSize !== null &&
+		state.fontWeight !== null
 	) {
 		const WCAGDetails = getWCAGDetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
 		const APCADetails = getAPCADetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
