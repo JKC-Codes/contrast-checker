@@ -14,6 +14,8 @@ have multiple text colours for comparing
 swap colours round
 pin colour pairs
 advanced option for numeric font weights
+share current colour and pins using query string
+opacity field
 
 https://www.w3.org/TR/WCAG22/
 https://w3c.github.io/silver/guidelines/
