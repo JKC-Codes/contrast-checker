@@ -7,7 +7,6 @@ const inputFontSize = document.querySelector('#input-font-size');
 const inputFontWeight = document.querySelector('#input-font-weight');
 const outputResult = document.querySelector('#output-result');
 
-const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
 const symbolDisplayedValue = Symbol('displayedValue');
 
 
@@ -63,7 +62,7 @@ const State = {
 init(State);
 
 
-function init(state) {
+function init(state) { // TODO
 	state._colourBackground[symbolDisplayedValue] = 'White';
 
 	// TODO: update state with stored history
@@ -108,7 +107,7 @@ function handleColourInputEvent(state) {
 }
 
 function handleColourInput(value, field, state) {
-	const {colourString} = parseColour(value);
+	const colourString = parseColour(value);
 	let colour = validateColour(colourString);
 
 	if(colour !== null) {
@@ -121,15 +120,12 @@ function handleColourInput(value, field, state) {
 
 function handleFontSizeInputEvent(state) {
 	return function(event) {
-		handleFontSizeInput(event.target.value, state);
+		handleFontSizeInput(event.target.valueAsNumber, state);
 	}
 }
 
 function handleFontSizeInput(value, state) {
-	const {number} = parseNumber(value);
-	const size = validateFontSize(number);
-
-	state.fontSize = size;
+	state.fontSize = (Number.isNaN(value) || value <= 0) ? null : value;
 }
 
 function handleFontWeightInputEvent(state) {
@@ -139,10 +135,8 @@ function handleFontWeightInputEvent(state) {
 }
 
 function handleFontWeightInput(value, state) {
-	const {number} = parseNumber(value);
-	const weight = validateFontWeight(number);
-
-	state.fontWeight = weight;
+	const number = Number.parseFloat(value);
+	state.fontWeight = (Number.isNaN(number) || number < 1 || number > 1000) ? null : number;
 }
 
 function parseColour(colourString) {
@@ -171,7 +165,7 @@ function parseColour(colourString) {
 		}
 	}
 
-	return {colourString};
+	return colourString;
 }
 
 function validateColour(colourString) {
@@ -188,39 +182,6 @@ function validateColour(colourString) {
 	catch(error) {
 		return null;
 	}
-}
-
-function parseNumber(numberString) {
-	numberString = numberString.trim();
-	const regexNumberString = new RegExp(`((?<!${regexNumber}))(${regexNumber})([^]*)`);
-	const resultArray = regexNumberString.exec(numberString) || ['', '', null, ''];
-	let number = Number.parseFloat(resultArray[2]);
-
-	if(isNaN(number)) {
-		number = null;
-	}
-
-	return {
-		number: number,
-		before: resultArray[1],
-		after: resultArray[3]
-	}
-}
-
-function validateFontSize(number) {
-	if(number <= 0) {
-		number = null;
-	}
-
-	return number;
-}
-
-function validateFontWeight(number) {
-	if(Number.isNaN(number) || number < 1 || number > 1000) {
-		number = null;
-	}
-
-	return number;
 }
 
 function handleStateChange(oldValue, newValue, state) {
@@ -262,11 +223,11 @@ function isSameValue(oldValue, newValue) {
 function updateUI(state) {
 	const contrastDetails = getContrastDetails(state);
 
-	updateUIContrastBooleanText(contrastDetails.colourPasses);
+	updateContrastBooleanText(contrastDetails.colourPasses);
 	temp();
 }
 
-function updateUIContrastBooleanText(colourPasses) {
+function updateContrastBooleanText(colourPasses) {
 	let contrastBooleanText = '';
 
 	if(colourPasses === true) {
@@ -279,17 +240,17 @@ function updateUIContrastBooleanText(colourPasses) {
 	outputResult.textContent = contrastBooleanText;
 }
 
-function getContrastDetails(state) {
-	const details = {
-		WCAGContrast: null,
-		APCAContrast: null,
+function getContrastDetails(state) { // TODO
+	const contrastDetails = {
+		contrastWCAG: null,
+		contrastAPCA: null,
 		colourPasses: null,
-		// largerFont: null,
-		// heavierWeight: null,
-		// darkerText: null,
-		// darkerBackground: null,
-		// lighterText: null,
-		// lighterBackground: null
+		fontHeavier: null,
+		fontLarger: null,
+		textDarker: null,
+		backgroundDarker: null,
+		textLighter: null,
+		backgroundLighter: null
 	};
 
 	if(
@@ -298,20 +259,34 @@ function getContrastDetails(state) {
 		state.fontSize !== null &&
 		state.fontWeight !== null
 	) {
-		const WCAGDetails = getWCAGDetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
-		const APCADetails = getAPCADetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
+		const detailsWCAG = getFullWCAGDetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
+		const detailsAPCA = getFullAPCADetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
 
-		details.WCAGContrast = WCAGDetails.score;
-		details.APCAContrast = APCADetails.score;
-		details.colourPasses = WCAGDetails.passes && APCADetails.passes;
+		contrastDetails.contrastWCAG = detailsWCAG.score;
+		contrastDetails.contrastAPCA = detailsAPCA.score;
+		contrastDetails.colourPasses = detailsWCAG.passes && detailsAPCA.passes;
+
+		// TODO: get largest/lightest/darkest of WCAG and APCA font & colours
+	}
+
+	return contrastDetails;
+}
+
+function getFullWCAGDetails(colourForeground, colourBackground, fontSize, fontWeight, criterionlevel) {
+	const details = getWCAGDetails(colourForeground, colourBackground, fontSize, fontWeight, criterionlevel);
+
+	if(details.passes !== true) {
+		// TODO: get alternative font/foreground/background
 	}
 
 	return details;
 }
 
 function getWCAGDetails(foreground, background, size, weight, level) {
-	const score = background.contrast(foreground, 'WCAG21');
-	const isLargeText = size >= 24 /*18pt*/ || (size >= 18.666666666666668 /*14pt*/ && weight >= 700);
+	const fontSizeLarge = 24; /*18pt*/
+	const fontSizeMedium = 18.666666666666668; /*14pt*/
+	const fontWeightBold = 700;
+	const isLargeText = size >= fontSizeLarge || (size >= fontSizeMedium && weight >= fontWeightBold);
 	let minimumRequiredScore = 4.5;
 
 	if(level === 'minimum' && isLargeText) {
@@ -321,17 +296,16 @@ function getWCAGDetails(foreground, background, size, weight, level) {
 		minimumRequiredScore = 7;
 	}
 
-	// TODO: detail alternatives if it fails
+	const score = background.contrast(foreground, 'WCAG21');
+	const passes = score >= minimumRequiredScore;
 
 	return {
 		score,
-		minimumRequiredScore,
-		passes: score >= minimumRequiredScore,
-		isLargeText
+		passes
 	};
 }
 
-function getAPCADetails(foreground, background, size, weight, level) {
+function getFullAPCADetails(foreground, background, size, weight, level) { // TODO
 	const score = Math.abs(background.contrast(foreground, 'APCA'));
 	let minimumRequiredScore = 65;
 
@@ -370,3 +344,22 @@ function temp() {
 
 	outputResult.innerHTML += `<br><br>WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
 }
+
+// const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
+
+// function parseNumber(numberString) {
+// 	numberString = numberString.trim();
+// 	const regexNumberString = new RegExp(`((?<!${regexNumber}))(${regexNumber})([^]*)`);
+// 	const resultArray = regexNumberString.exec(numberString) || ['', '', null, ''];
+// 	let number = Number.parseFloat(resultArray[2]);
+
+// 	if(isNaN(number)) {
+// 		number = null;
+// 	}
+
+// 	return {
+// 		number: number,
+// 		before: resultArray[1],
+// 		after: resultArray[3]
+// 	}
+// }
