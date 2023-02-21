@@ -8,7 +8,8 @@ const inputFontWeight = document.querySelector('#input-font-weight');
 const outputResult = document.querySelector('#output-result');
 
 const symbolDisplayedValue = Symbol('displayedValue');
-
+const WCAGfontSizeLarge = 24; /*18pt*/
+const WCAGfontSizeMedium = 18.666666666666668; /*14pt*/
 
 const State = {
 	_colourForeground: null,
@@ -241,81 +242,86 @@ function updateContrastBooleanText(colourPasses) {
 }
 
 function getContrastDetails(state) { // TODO
+	const foreground = state.colourForeground;
+	const background = state.colourBackground;
+	const size = state.fontSize;
+	const weight = state.fontWeight;
+	const level = state.criterionLevel;
 	const contrastDetails = {
 		contrastWCAG: null,
 		contrastAPCA: null,
 		colourPasses: null,
-		fontHeavier: null,
-		fontLarger: null,
-		textDarker: null,
-		backgroundDarker: null,
-		textLighter: null,
-		backgroundLighter: null
+		alternative: {
+			font: {
+				size: null,
+				weight: null,
+				sizeAndWeight: null,
+			},
+			foreground: {
+				lighter: null,
+				darker: null
+			},
+			background: {
+				lighter: null,
+				darker: null
+			}
+		}
 	};
 
-	if(
-		state.colourForeground !== null &&
-		state.colourBackground !== null &&
-		state.fontSize !== null &&
-		state.fontWeight !== null
-	) {
-		const detailsWCAG = getFullWCAGDetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
-		const detailsAPCA = getFullAPCADetails(state.colourForeground, state.colourBackground, state.fontSize, state.fontWeight, state.criterionLevel);
+	if(foreground !== null && background !== null && size !== null && weight !== null) {
+		const detailsWCAG = getWCAGDetails(foreground, background, size, weight, level);
+		const detailsAPCA = getAPCADetails(foreground, background, size, weight, level);
 
 		contrastDetails.contrastWCAG = detailsWCAG.score;
 		contrastDetails.contrastAPCA = detailsAPCA.score;
 		contrastDetails.colourPasses = detailsWCAG.passes && detailsAPCA.passes;
 
-		// TODO: get largest/lightest/darkest of WCAG and APCA font & colours
+		// TODO: get alternatives
 	}
 
 	return contrastDetails;
 }
 
-function getFullWCAGDetails(colourForeground, colourBackground, fontSize, fontWeight, criterionlevel) {
-	const details = getWCAGDetails(colourForeground, colourBackground, fontSize, fontWeight, criterionlevel);
-
-	if(details.passes !== true) {
-		// TODO: get alternative font/foreground/background
-	}
-
-	return details;
-}
-
 function getWCAGDetails(foreground, background, size, weight, level) {
-	const fontSizeLarge = 24; /*18pt*/
-	const fontSizeMedium = 18.666666666666668; /*14pt*/
-	const fontWeightBold = 700;
-	const isLargeText = size >= fontSizeLarge || (size >= fontSizeMedium && weight >= fontWeightBold);
-	let minimumRequiredScore = 4.5;
-
-	if(level === 'minimum' && isLargeText) {
-		minimumRequiredScore = 3;
-	}
-	else if(level === 'enhanced' && !isLargeText) {
-		minimumRequiredScore = 7;
-	}
-
 	const score = background.contrast(foreground, 'WCAG21');
-	const passes = score >= minimumRequiredScore;
+	const isLargeText = size >= WCAGfontSizeLarge || (size >= WCAGfontSizeMedium && weight >= 700);
+	const requiredScore = getRequiredWCAGScore(level, isLargeText);
+	const passes = score >= requiredScore;
 
 	return {
 		score,
+		isLargeText,
+		requiredScore,
 		passes
 	};
 }
 
-function getFullAPCADetails(foreground, background, size, weight, level) { // TODO
-	const score = Math.abs(background.contrast(foreground, 'APCA'));
-	let minimumRequiredScore = 65;
+function getRequiredWCAGScore(level, isLargeText) {
+	if(level === 'minimum' && isLargeText) {
+		return 3;
+	}
+	else if(level === 'enhanced' && !isLargeText) {
+		return 7;
+	}
+	else {
+		return 4.5;
+	}
+}
 
-	// TODO: detail pass/fail levels
+function getAPCADetails(foreground, background, size, weight, level) {
+	const score = Math.abs(background.contrast(foreground, 'APCA'));
+	const requiredScore = getRequiredAPCAScore(level, size, weight);
+	const passes = score >= requiredScore;
 
 	return {
 		score,
-		minimumRequiredScore,
-		passes: score >= minimumRequiredScore
+		requiredScore,
+		passes
 	};
+}
+
+function getRequiredAPCAScore(level, size, weight) { // TODO
+	return 0.65;
 }
 
 
