@@ -186,7 +186,7 @@ function validateColour(colourString) {
 }
 
 function handleStateChange(oldValue, newValue, state) {
-	if(isSameValue(oldValue, newValue)) {
+	if(isSameInputValue(oldValue, newValue)) {
 		return;
 	}
 
@@ -199,7 +199,7 @@ function handleStateChange(oldValue, newValue, state) {
 	}
 }
 
-function isSameValue(oldValue, newValue) {
+function isSameInputValue(oldValue, newValue) {
 	if(oldValue === newValue) {
 		return true;
 	}
