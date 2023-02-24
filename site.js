@@ -1,3 +1,4 @@
+import { fontLookupAPCA as APCALookup } from "/third-party/apca-font-lookup.js";
 import Colour from "/third-party/color-js.js";
 
 
@@ -10,6 +11,8 @@ const outputResult = document.querySelector('#output-result');
 const symbolDisplayedValue = Symbol('displayedValue');
 const WCAGfontSizeLarge = 24; /*18pt*/
 const WCAGfontSizeMedium = 18.666666666666668; /*14pt*/
+const APCAfontSizeMinimum = 13;
+const APCAfontSizeEnhanced = 18;
 
 const State = {
 	_colourForeground: null,
@@ -308,20 +311,37 @@ function getRequiredWCAGScore(level, isLargeText) {
 	}
 }
 
-function getAPCADetails(foreground, background, size, weight, level) {
-	const score = Math.abs(background.contrast(foreground, 'APCA'));
-	const requiredScore = getRequiredAPCAScore(level, size, weight);
-	const passes = score >= requiredScore;
+function getAPCADetails(foreground, background, size, weight, level) { // TODO
+	let score = Math.abs(background.contrast(foreground, 'APCA'));
+
+	if(level === "minimum") {
+		score += 15;
+	}
+
+	const requirementTable = APCALookup(score);
+	let passes;
+
+	if(level === 'minimum' && size < APCAfontSizeMinimum) {
+		passes = false;
+	}
+	else if(level === 'enhanced' && size < APCAfontSizeEnhanced) {
+		passes = false;
+	}
+	else {
+		const weightIndex = Math.floor(weight / 100);
+		passes = size >= requirementTable[weightIndex];
+
+		if(weight < 100 || weight > 900 || weight % 100 !== 0) {
+			// TODO interpolate values
+			passes = false;
+		}
+	}
 
 	return {
 		score,
-		requiredScore,
+		requirementTable,
 		passes
 	};
-}
-
-function getRequiredAPCAScore(level, size, weight) { // TODO
-	return 0.65;
 }
 
 
