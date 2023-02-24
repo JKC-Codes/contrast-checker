@@ -1,4 +1,4 @@
-import Colour from "/colorjs.js";
+import Colour from "/third-party/color-js.js";
 
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
