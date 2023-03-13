@@ -69,6 +69,12 @@ function init(state) { // TODO
 
 	// TODO: update state with stored history
 
+	initInputValues(state)
+	updateUI(state);
+	initInputListeners(state)
+}
+
+function initInputValues(state) {
 	if(inputColourForeground.value !== undefined) {
 		handleColourInput(inputColourForeground.value, 'colourForeground', state);
 	}
@@ -95,15 +101,15 @@ function init(state) { // TODO
 	else if(inputFontWeight.type === 'select-one' && inputFontWeight.value !== undefined) {
 		handleFontWeightInput(Number.parseFloat(inputFontWeight.value), state);
 	}
+}
 
-	updateUI(state);
-
-	inputColourForeground.addEventListener('input', handleColourInputEvent(State));
-	inputColourBackground.addEventListener('input', handleColourInputEvent(State));
+function initInputListeners(state) {
+	inputColourForeground.addEventListener('input', handleColourInputEvent(state));
+	inputColourBackground.addEventListener('input', handleColourInputEvent(state));
 	for(const inputFontSize of inputsFontSize) {
-		inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
+		inputFontSize.addEventListener('input', handleFontSizeInputEvent(state));
 	}
-	inputFontWeight.addEventListener('change', handleFontWeightInputEvent(State));
+	inputFontWeight.addEventListener('change', handleFontWeightInputEvent(state));
 }
 
 function handleColourInputEvent(state) {
@@ -268,10 +274,10 @@ function updateContrastBooleanText(colourPasses) {
 	let contrastBooleanText = '';
 
 	if(colourPasses === true) {
-		contrastBooleanText = 'Pass';
+		contrastBooleanText = 'Passes';
 	}
 	else if(colourPasses === false) {
-		contrastBooleanText = 'Fail';
+		contrastBooleanText = 'Fails';
 	}
 
 	outputResult.textContent = contrastBooleanText;
