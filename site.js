@@ -4,7 +4,7 @@ import { bridgeRatio as getBPCARatio, sRGBtoY } from "/third-party/bridge-pca.js
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
 const inputColourBackground = document.querySelector('#input-colour-background');
-const inputFontSize = document.querySelector('#input-font-size');
+const inputsFontSize = document.querySelectorAll('[id|=input-font-size]');
 const inputFontWeight = document.querySelector('#input-font-weight');
 const outputResult = document.querySelector('#output-result');
 
@@ -72,12 +72,23 @@ function init(state) { // TODO
 	if(inputColourForeground.value !== undefined) {
 		handleColourInput(inputColourForeground.value, 'colourForeground', state);
 	}
+
 	if(inputColourBackground.value !== undefined) {
 		handleColourInput(inputColourBackground.value, 'colourBackground', state);
 	}
-	if(inputFontSize.value !== undefined) {
-		handleFontSizeInput(inputFontSize.value, state);
+
+	if(inputsFontSize[0].type === 'radio') {
+		for(const inputFontSize of inputsFontSize) {
+			if(inputFontSize.checked) {
+				handleFontSizeInput(Number.parseFloat(inputFontSize.value), state);
+				break;
+			}
+		}
 	}
+	else if(inputsFontSize[0].type === 'number') {
+		handleFontSizeInput(inputsFontSize[0].valueAsNumber, state);
+	}
+
 	if(inputFontWeight.value !== undefined) {
 		handleFontWeightInput(inputFontWeight.value, state);
 	}
@@ -86,7 +97,9 @@ function init(state) { // TODO
 
 	inputColourForeground.addEventListener('input', handleColourInputEvent(State));
 	inputColourBackground.addEventListener('input', handleColourInputEvent(State));
-	inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
+	for(const inputFontSize of inputsFontSize) {
+		inputFontSize.addEventListener('input', handleFontSizeInputEvent(State));
+	}
 	inputFontWeight.addEventListener('change', handleFontWeightInputEvent(State));
 }
 
@@ -101,7 +114,7 @@ function handleColourInputEvent(state) {
 			field = 'colourBackground';
 		}
 		else {
-			throw new Error('Field input ID not recognised');
+			throw new Error(`Colour input's field ID not recognised`);
 		}
 
 		handleColourInput(event.target.value, field, state);
@@ -121,8 +134,18 @@ function handleColourInput(value, field, state) {
 }
 
 function handleFontSizeInputEvent(state) {
-	return function(event) {
-		handleFontSizeInput(event.target.valueAsNumber, state);
+	if(inputsFontSize[0].type === 'radio') {
+		return function(event) {
+			handleFontSizeInput(Number.parseFloat(event.target.value), state);
+		}
+	}
+	else if(inputsFontSize[0].type === 'number') {
+		return function(event) {
+			handleFontSizeInput(event.target.valueAsNumber, state);
+		}
+	}
+	else {
+		throw new Error('Font size input type not supported');
 	}
 }
 

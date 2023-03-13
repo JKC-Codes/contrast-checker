@@ -20,9 +20,21 @@
 		<label>Background colour:
 			<input id="input-colour-background" type="text" required spellcheck="false" value="White">
 		</label>
-		<label>Font size:
+		<fieldset>
+			<legend>Font size:</legend>
+			<label>&lt; 19px
+				<input id="input-font-size-small" name="input-font-size" type="radio" required value="18" checked>
+			</label>
+			<label>&ge; 19px &ndash; &lt; 24px
+				<input id="input-font-size-medium" name="input-font-size" type="radio" required value="19">
+			</label>
+			<label>&ge; 24px
+				<input id="input-font-size-large" name="input-font-size" type="radio" required value="24">
+			</label>
+		</fieldset>
+		<!-- <label>Font size:
 			<input id="input-font-size" type="number" required value="16" min="1" step="any">
-		</label>
+		</label> -->
 		<label>Font weight:
 			<select id="input-font-weight" required>
 				<option value="100">Thin</option>
