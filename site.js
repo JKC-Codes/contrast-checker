@@ -89,8 +89,11 @@ function init(state) { // TODO
 		handleFontSizeInput(inputsFontSize[0].valueAsNumber, state);
 	}
 
-	if(inputFontWeight.value !== undefined) {
-		handleFontWeightInput(inputFontWeight.value, state);
+	if(inputFontWeight.type === 'checkbox' && inputFontWeight.checked) {
+		handleFontWeightInput(700, state);
+	}
+	else if(inputFontWeight.type === 'select-one' && inputFontWeight.value !== undefined) {
+		handleFontWeightInput(Number.parseFloat(inputFontWeight.value), state);
 	}
 
 	updateUI(state);
@@ -154,14 +157,23 @@ function handleFontSizeInput(value, state) {
 }
 
 function handleFontWeightInputEvent(state) {
-	return function(event) {
-		handleFontWeightInput(event.target.value, state);
+	if(inputFontWeight.type === 'checkbox') {
+		return function(event) {
+			handleFontWeightInput(event.target.checked ? 700 : 400, state);
+		}
+	}
+	else if(inputFontWeight.type === 'select-one') {
+		return function(event) {
+			handleFontWeightInput(Number.parseFloat(event.target.value), state);
+		}
+	}
+	else {
+		throw new Error('Font weight input type not supported');
 	}
 }
 
 function handleFontWeightInput(value, state) {
-	const number = Number.parseFloat(value);
-	state.fontWeight = (Number.isNaN(number) || number < 1 || number > 1000) ? null : number;
+	state.fontWeight = (Number.isNaN(value) || value < 1 || value > 1000) ? null : value;
 }
 
 function parseColour(colourString) {
