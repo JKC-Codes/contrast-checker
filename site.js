@@ -1,5 +1,5 @@
-import { fontLookupAPCA as APCALookup } from "/third-party/apca-font-lookup.js";
 import Colour from "/third-party/color-js.js";
+import { bridgeRatio as getBPCARatio, sRGBtoY } from "/third-party/bridge-pca.js";
 
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
@@ -11,8 +11,6 @@ const outputResult = document.querySelector('#output-result');
 const symbolDisplayedValue = Symbol('displayedValue');
 const WCAGfontSizeLarge = 24; /*18pt*/
 const WCAGfontSizeMedium = 18.666666666666668; /*14pt*/
-const APCAfontSizeMinimum = 13;
-const APCAfontSizeEnhanced = 18;
 
 const State = {
 	_colourForeground: null,
@@ -250,9 +248,11 @@ function getContrastDetails(state) { // TODO
 	const size = state.fontSize;
 	const weight = state.fontWeight;
 	const level = state.criterionLevel;
+
 	const contrastDetails = {
 		contrastWCAG: null,
 		contrastAPCA: null,
+		contrastBPCA: null,
 		colourPasses: null,
 		alternative: {
 			font: {
@@ -272,12 +272,15 @@ function getContrastDetails(state) { // TODO
 	};
 
 	if(foreground !== null && background !== null && size !== null && weight !== null) {
-		const detailsWCAG = getWCAGDetails(foreground, background, size, weight, level);
-		const detailsAPCA = getAPCADetails(foreground, background, size, weight, level);
+		const contrasts = getContrasts(foreground, background, size, weight, level);
+		const isLargeText = size >= WCAGfontSizeLarge || (size >= WCAGfontSizeMedium && weight >= 700);
+		const requiredScore = getRequiredWCAGScore(level, isLargeText);
+		const passes = contrasts.score >= requiredScore;
 
-		contrastDetails.contrastWCAG = detailsWCAG.score;
-		contrastDetails.contrastAPCA = detailsAPCA.score;
-		contrastDetails.colourPasses = detailsWCAG.passes && detailsAPCA.passes;
+		contrastDetails.contrastWCAG = contrasts.contrastWCAG;
+		contrastDetails.contrastAPCA = contrasts.contrastAPCA;
+		contrastDetails.contrastBPCA = contrasts.contrastBPCA;
+		contrastDetails.colourPasses = passes;
 
 		// TODO: get alternatives
 	}
@@ -285,18 +288,26 @@ function getContrastDetails(state) { // TODO
 	return contrastDetails;
 }
 
-function getWCAGDetails(foreground, background, size, weight, level) {
-	const score = background.contrast(foreground, 'WCAG21');
-	const isLargeText = size >= WCAGfontSizeLarge || (size >= WCAGfontSizeMedium && weight >= 700);
-	const requiredScore = getRequiredWCAGScore(level, isLargeText);
-	const passes = score >= requiredScore;
+function getContrasts(foreground, background) {
+	const contrastWCAG = background.contrast(foreground, 'WCAG21');
+	const contrastAPCA = background.contrast(foreground, 'APCA');
+	const contrastBPCA = getBPCAContrast(contrastAPCA, foreground, background);
+	const score = Math.min(contrastWCAG, Math.abs(contrastBPCA));
 
 	return {
 		score,
-		isLargeText,
-		requiredScore,
-		passes
+		contrastWCAG,
+		contrastAPCA,
+		contrastBPCA,
 	};
+}
+
+function getBPCAContrast(APCA, foreground, background) {
+	const foregroundLuminance = sRGBtoY(foreground.coords.map(colour => colour * 255));
+	const backgroundLuminance = sRGBtoY(background.coords.map(colour => colour * 255));
+	const BPCARatio = getBPCARatio(APCA, foregroundLuminance, backgroundLuminance, '', 100);
+
+	return Number.parseFloat(BPCARatio);
 }
 
 function getRequiredWCAGScore(level, isLargeText) {
@@ -309,39 +320,6 @@ function getRequiredWCAGScore(level, isLargeText) {
 	else {
 		return 4.5;
 	}
-}
-
-function getAPCADetails(foreground, background, size, weight, level) { // TODO
-	let score = Math.abs(background.contrast(foreground, 'APCA'));
-
-	if(level === "minimum") {
-		score += 15;
-	}
-
-	const requirementTable = APCALookup(score);
-	let passes;
-
-	if(level === 'minimum' && size < APCAfontSizeMinimum) {
-		passes = false;
-	}
-	else if(level === 'enhanced' && size < APCAfontSizeEnhanced) {
-		passes = false;
-	}
-	else {
-		const weightIndex = Math.floor(weight / 100);
-		passes = size >= requirementTable[weightIndex];
-
-		if(weight < 100 || weight > 900 || weight % 100 !== 0) {
-			// TODO interpolate values
-			passes = false;
-		}
-	}
-
-	return {
-		score,
-		requirementTable,
-		passes
-	};
 }
 
 
@@ -365,10 +343,9 @@ function temp() {
 		return;
 	}
 
-	const contrastWCAG = State.colourBackground.contrast(State.colourForeground, 'WCAG21');
-	const contrastAPCA = Math.abs(State.colourBackground.contrast(State.colourForeground, 'APCA'));
+	const contrasts = getContrasts(State.colourForeground, State.colourBackground, State.fontSize, State.fontWeight, State.criterionLevel);
 
-	outputResult.innerHTML += `<br><br>WCAG: ${contrastWCAG} APCA: ${contrastAPCA}`;
+	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}`;
 }
 
 // const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
