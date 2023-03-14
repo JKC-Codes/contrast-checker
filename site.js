@@ -13,8 +13,8 @@ const WCAGfontSizeLarge = 24; /*18pt*/
 const WCAGfontSizeMedium = 18.666666666666668; /*14pt*/
 
 const State = {
-	_colourForeground: null,
-	_colourBackground: new Colour('white'),
+	_colourForeground: new Colour('#1a1a1a'),
+	_colourBackground: new Colour('#fafafa'),
 	_fontSize: 16,
 	_fontWeight: 400,
 	_history: [],
@@ -65,42 +65,21 @@ init(State);
 
 
 function init(state) { // TODO
-	state._colourBackground[symbolDisplayedValue] = 'White';
+	if(false) {
+		// TODO: update state with stored history
+	}
+	else {
+		const hexForeground = state.colourForeground.toString({format: 'hex'});
+		const hexBackground = state.colourBackground.toString({format: 'hex'});
 
-	// TODO: update state with stored history
+		inputColourForeground.value = hexForeground;
+		inputColourBackground.value = hexBackground;
+		state.colourForeground[symbolDisplayedValue] = hexForeground;
+		state.colourBackground[symbolDisplayedValue] = hexBackground;
+	}
 
-	initInputValues(state)
 	updateUI(state);
 	initInputListeners(state)
-}
-
-function initInputValues(state) {
-	if(inputColourForeground.value !== undefined) {
-		handleColourInput(inputColourForeground.value, 'colourForeground', state);
-	}
-
-	if(inputColourBackground.value !== undefined) {
-		handleColourInput(inputColourBackground.value, 'colourBackground', state);
-	}
-
-	if(inputsFontSize[0].type === 'radio') {
-		for(const inputFontSize of inputsFontSize) {
-			if(inputFontSize.checked) {
-				handleFontSizeInput(Number.parseFloat(inputFontSize.value), state);
-				break;
-			}
-		}
-	}
-	else if(inputsFontSize[0].type === 'number') {
-		handleFontSizeInput(inputsFontSize[0].valueAsNumber, state);
-	}
-
-	if(inputFontWeight.type === 'checkbox' && inputFontWeight.checked) {
-		handleFontWeightInput(700, state);
-	}
-	else if(inputFontWeight.type === 'select-one' && inputFontWeight.value !== undefined) {
-		handleFontWeightInput(Number.parseFloat(inputFontWeight.value), state);
-	}
 }
 
 function initInputListeners(state) {
@@ -270,19 +249,6 @@ function updateUI(state) {
 	temp();
 }
 
-function updateContrastBooleanText(colourPasses) {
-	let contrastBooleanText = '';
-
-	if(colourPasses === true) {
-		contrastBooleanText = 'Passes';
-	}
-	else if(colourPasses === false) {
-		contrastBooleanText = 'Fails';
-	}
-
-	outputResult.textContent = contrastBooleanText;
-}
-
 function getContrastDetails(state) { // TODO
 	const foreground = state.colourForeground;
 	const background = state.colourBackground;
@@ -361,6 +327,19 @@ function getRequiredWCAGScore(level, isLargeText) {
 	else {
 		return 4.5;
 	}
+}
+
+function updateContrastBooleanText(colourPasses) {
+	let contrastBooleanText = '';
+
+	if(colourPasses === true) {
+		contrastBooleanText = 'Passes';
+	}
+	else if(colourPasses === false) {
+		contrastBooleanText = 'Fails';
+	}
+
+	outputResult.textContent = contrastBooleanText;
 }
 
 
