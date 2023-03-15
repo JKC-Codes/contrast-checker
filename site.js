@@ -265,7 +265,10 @@ function getContrastDetails(state) { // TODO
 			font: {
 				size: null,
 				weight: null,
-				sizeAndWeight: null,
+				sizeAndWeight: {
+					size: null,
+					weight: null
+				},
 			},
 			foreground: {
 				lighter: null,
@@ -289,7 +292,10 @@ function getContrastDetails(state) { // TODO
 		contrastDetails.contrastBPCA = contrasts.contrastBPCA;
 		contrastDetails.colourPasses = passes;
 
-		// TODO: get alternatives
+		if(passes === false) {
+			getAlternativeContrasts(state, contrasts, isLargeText, requiredScore);
+			// TODO add to contrastDetails object
+		}
 	}
 
 	return contrastDetails;
@@ -340,6 +346,66 @@ function updateContrastBooleanText(colourPasses) {
 	}
 
 	outputResult.textContent = contrastBooleanText;
+}
+
+function getAlternativeContrasts(state, contrasts, isLargeText, requiredScore) { // TODO
+	const alternatives = {
+		font: {
+			size: null,
+			weight: null,
+			sizeAndWeight: {
+				size: null,
+				weight: null
+			},
+		},
+		foreground: {
+			lighter: null,
+			darker: null
+		},
+		background: {
+			lighter: null,
+			darker: null
+		}
+	}
+
+	if(!isLargeText) {
+		const alternativeFonts = getAlternativeFonts(state.criterionLevel, contrasts.score, state.fontSize, state.fontWeight);
+
+		Object.assign(alternatives.font, alternativeFonts);
+	}
+
+	// TODO get alternative colours
+}
+
+function getAlternativeFonts(level, score, size, weight) {
+	if(score < getRequiredWCAGScore(level, true)) {
+		return {};
+	}
+
+	const alternativeFonts = {
+		size: WCAGfontSizeLarge
+	};
+
+	if(weight < 700) {
+		if(size < WCAGfontSizeMedium) {
+			alternativeFonts.sizeAndWeight = {
+				size: WCAGfontSizeMedium,
+				weight: 700
+			}
+		}
+		else {
+			alternativeFonts.weight = 700;
+		}
+	}
+	else {
+		alternativeFonts.size = WCAGfontSizeMedium;
+	}
+
+	return alternativeFonts;
+}
+
+function getAlternativeColours() { // TODO
+	// TODO
 }
 
 
