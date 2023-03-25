@@ -242,14 +242,14 @@ function isSameInputValue(oldValue, newValue) {
 	}
 }
 
-function updateUI(state) {
+function updateUI(state) { // TODO
 	const contrastDetails = getContrastDetails(state);
 
 	updateContrastBooleanText(contrastDetails.colourPasses);
 	temp();
 }
 
-function getContrastDetails(state) { // TODO
+function getContrastDetails(state) {
 	const foreground = state.colourForeground;
 	const background = state.colourBackground;
 	const size = state.fontSize;
@@ -261,24 +261,7 @@ function getContrastDetails(state) { // TODO
 		contrastAPCA: null,
 		contrastBPCA: null,
 		colourPasses: null,
-		alternative: {
-			font: {
-				size: null,
-				weight: null,
-				sizeAndWeight: {
-					size: null,
-					weight: null
-				},
-			},
-			foreground: {
-				lighter: null,
-				darker: null
-			},
-			background: {
-				lighter: null,
-				darker: null
-			}
-		}
+		alternative: null
 	};
 
 	if(foreground !== null && background !== null && size !== null && weight !== null) {
@@ -293,8 +276,7 @@ function getContrastDetails(state) { // TODO
 		contrastDetails.colourPasses = passes;
 
 		if(passes === false) {
-			getAlternativeContrasts(state, contrasts, isLargeText, requiredScore);
-			// TODO add to contrastDetails object
+			contrastDetails.alternative = getAlternativeContrasts(state, contrasts, requiredScore);
 		}
 	}
 
@@ -335,6 +317,148 @@ function getRequiredWCAGScore(level, isLargeText) {
 	}
 }
 
+function getAlternativeContrasts(state, contrasts, requiredScore) {
+	const alternatives = {
+		font: {},
+		colour: {},
+	}
+
+	alternatives.font = getAlternativeFonts(state.criterionLevel, contrasts.score, state.fontSize, state.fontWeight);
+	alternatives.colour = getAlternativeColours(state.colourForeground, state.colourBackground, requiredScore);
+
+	return alternatives;
+}
+
+function getAlternativeFonts(level, score, size, weight) {
+	const alternativeFonts = {
+		size: null,
+		weight: null,
+		sizeAndWeight: {
+			size: null,
+			weight: null
+		},
+	}
+
+	if(score >= getRequiredWCAGScore(level, true)) {
+		alternativeFonts.size = WCAGfontSizeLarge
+
+		if(weight < 700) {
+			if(size < WCAGfontSizeMedium) {
+				alternativeFonts.sizeAndWeight = {
+					size: WCAGfontSizeMedium,
+					weight: 700
+				}
+			}
+			else {
+				alternativeFonts.weight = 700;
+			}
+		}
+		else {
+			alternativeFonts.size = WCAGfontSizeMedium;
+		}
+	}
+
+	return alternativeFonts;
+}
+
+function getAlternativeColours(foreground, background, requiredScore) {
+	const alternativeColours = {
+		foreground: {},
+		background: {}
+	};
+
+	alternativeColours.foreground.lighter = getAlternativeColour(foreground, background, requiredScore, 'foreground', 'lighter');
+	alternativeColours.foreground.darker = getAlternativeColour(foreground, background, requiredScore, 'foreground', 'darker');
+	alternativeColours.background.lighter = getAlternativeColour(foreground, background, requiredScore, 'background', 'lighter');
+	alternativeColours.background.darker = getAlternativeColour(foreground, background, requiredScore, 'background', 'darker');
+
+	return alternativeColours;
+}
+
+function getAlternativeColour(foreground, background, requiredScore, target, direction) {
+	let subject;
+	let control;
+	let lightnessMin = 0;
+	let lightnessMax = 1;
+	let contrastLightnessMin;
+	let contrastLightnessMax;
+
+	if(target === 'foreground') {
+		subject = new Colour(foreground);
+		control = background;
+	}
+	else if(target === 'background') {
+		subject = new Colour(background);
+		control = foreground;
+	}
+
+	if(direction === 'lighter') {
+		lightnessMin = subject.oklch.l;
+	}
+	else if(direction === 'darker') {
+		lightnessMax = subject.oklch.l;
+	}
+
+	function getAltContrasts(subject) {
+		let contrasts;
+
+		if(target === 'foreground') {
+			contrasts = getContrasts(subject, control);
+		}
+		else if(target === 'background') {
+			contrasts = getContrasts(control, subject);
+		}
+
+		contrasts.score = Number.parseFloat(contrasts.score.toFixed(10));
+
+		return contrasts;
+	}
+
+	subject.oklch.l = lightnessMin;
+	contrastLightnessMin = getAltContrasts(subject).score;
+	subject.oklch.l = lightnessMax;
+	contrastLightnessMax = getAltContrasts(subject).score;
+
+	if(contrastLightnessMin < requiredScore && contrastLightnessMax < requiredScore) {
+		return null;
+	}
+
+	while(contrastLightnessMin !== requiredScore && contrastLightnessMax !== requiredScore) {
+		const lightnessMid = (lightnessMax + lightnessMin) / 2;
+		subject.oklch.l = lightnessMid;
+		const contrastLightnessMid = getAltContrasts(subject).score;
+
+		if(contrastLightnessMid < requiredScore) {
+			if(contrastLightnessMin < contrastLightnessMax) {
+				lightnessMin = lightnessMid;
+			}
+			else if(contrastLightnessMin > contrastLightnessMax) {
+				lightnessMax = lightnessMid;
+			}
+		}
+		else if(contrastLightnessMid > requiredScore) {
+			if(contrastLightnessMin < contrastLightnessMax) {
+				lightnessMax = lightnessMid;
+			}
+			else if(contrastLightnessMin > contrastLightnessMax) {
+				lightnessMin = lightnessMid;
+			}
+		}
+		else {
+			lightnessMin = lightnessMid;
+			lightnessMax = lightnessMid;
+			break;
+		}
+
+		subject.oklch.l = lightnessMin;
+		contrastLightnessMin = getAltContrasts(subject).score;
+		subject.oklch.l = lightnessMax;
+		contrastLightnessMax = getAltContrasts(subject).score;
+	}
+
+	return subject;
+}
+
 function updateContrastBooleanText(colourPasses) {
 	let contrastBooleanText = '';
 
@@ -346,66 +470,6 @@ function updateContrastBooleanText(colourPasses) {
 	}
 
 	outputResult.textContent = contrastBooleanText;
-}
-
-function getAlternativeContrasts(state, contrasts, isLargeText, requiredScore) { // TODO
-	const alternatives = {
-		font: {
-			size: null,
-			weight: null,
-			sizeAndWeight: {
-				size: null,
-				weight: null
-			},
-		},
-		foreground: {
-			lighter: null,
-			darker: null
-		},
-		background: {
-			lighter: null,
-			darker: null
-		}
-	}
-
-	if(!isLargeText) {
-		const alternativeFonts = getAlternativeFonts(state.criterionLevel, contrasts.score, state.fontSize, state.fontWeight);
-
-		Object.assign(alternatives.font, alternativeFonts);
-	}
-
-	// TODO get alternative colours
-}
-
-function getAlternativeFonts(level, score, size, weight) {
-	if(score < getRequiredWCAGScore(level, true)) {
-		return {};
-	}
-
-	const alternativeFonts = {
-		size: WCAGfontSizeLarge
-	};
-
-	if(weight < 700) {
-		if(size < WCAGfontSizeMedium) {
-			alternativeFonts.sizeAndWeight = {
-				size: WCAGfontSizeMedium,
-				weight: 700
-			}
-		}
-		else {
-			alternativeFonts.weight = 700;
-		}
-	}
-	else {
-		alternativeFonts.size = WCAGfontSizeMedium;
-	}
-
-	return alternativeFonts;
-}
-
-function getAlternativeColours() { // TODO
-	// TODO
 }
 
 
