@@ -69,13 +69,8 @@ function init(state) { // TODO
 		// TODO: update state with stored history
 	}
 	else {
-		const hexForeground = state.colourForeground.toString({format: 'hex'});
-		const hexBackground = state.colourBackground.toString({format: 'hex'});
-
-		inputColourForeground.value = hexForeground;
-		inputColourBackground.value = hexBackground;
-		state.colourForeground[symbolDisplayedValue] = hexForeground;
-		state.colourBackground[symbolDisplayedValue] = hexBackground;
+		inputColourForeground.value = state.colourForeground.toString({format: 'hex'});
+		inputColourBackground.value = state.colourBackground.toString({format: 'hex'});
 	}
 
 	updateUI(state);
@@ -376,87 +371,89 @@ function getAlternativeColours(foreground, background, requiredScore) {
 }
 
 function getAlternativeColour(foreground, background, requiredScore, target, direction) {
-	let subject;
-	let control;
-	let lightnessMin = 0;
-	let lightnessMax = 1;
-	let contrastLightnessMin;
-	let contrastLightnessMax;
+	const lighter = {
+		colour: undefined,
+		hex: undefined
+	};
+	const darker = {
+		colour: undefined,
+		hex: undefined
+	};
+
+	function getAltContrasts(subject) {
+		if(target === 'foreground') {
+			return getContrasts(subject, background);
+		}
+		else if(target === 'background') {
+			return getContrasts(foreground, subject);
+		}
+	}
+
+	function updateColour(subject, lightness) {
+		subject.colour.oklch.l = lightness;
+		subject.colour.toGamut();
+
+		const hex = subject.colour.toString({format: 'hex'});
+
+		// Using hex ensures that we stay with 256 possible values
+		subject.colour = new Colour(hex);
+		subject.hex = hex;
+	}
 
 	if(target === 'foreground') {
-		subject = new Colour(foreground);
-		control = background;
+		darker.colour = new Colour(foreground);
+		lighter.colour = new Colour(foreground);
 	}
 	else if(target === 'background') {
-		subject = new Colour(background);
-		control = foreground;
+		darker.colour = new Colour(background);
+		lighter.colour = new Colour(background);
 	}
 
 	if(direction === 'lighter') {
-		lightnessMin = subject.oklch.l;
+		updateColour(lighter, 100);
+		updateColour(darker, darker.colour.oklch.l);
 	}
 	else if(direction === 'darker') {
-		lightnessMax = subject.oklch.l;
+		updateColour(darker, -100);
+		updateColour(lighter, lighter.colour.oklch.l);
 	}
 
-	function getAltContrasts(subject) {
-		let contrasts;
+	const contrastLighter = getAltContrasts(lighter.colour).score;
+	const contrastDarker = getAltContrasts(darker.colour).score;
 
-		if(target === 'foreground') {
-			contrasts = getContrasts(subject, control);
-		}
-		else if(target === 'background') {
-			contrasts = getContrasts(control, subject);
-		}
-
-		contrasts.score = Number.parseFloat(contrasts.score.toFixed(10));
-
-		return contrasts;
-	}
-
-	subject.oklch.l = lightnessMin;
-	contrastLightnessMin = getAltContrasts(subject).score;
-	subject.oklch.l = lightnessMax;
-	contrastLightnessMax = getAltContrasts(subject).score;
-
-	if(contrastLightnessMin < requiredScore && contrastLightnessMax < requiredScore) {
+	if(contrastLighter < requiredScore && contrastDarker < requiredScore) {
 		return null;
 	}
-
-	while(contrastLightnessMin !== requiredScore && contrastLightnessMax !== requiredScore) {
-		const lightnessMid = (lightnessMax + lightnessMin) / 2;
-		subject.oklch.l = lightnessMid;
-		const contrastLightnessMid = getAltContrasts(subject).score;
-
-		if(contrastLightnessMid < requiredScore) {
-			if(contrastLightnessMin < contrastLightnessMax) {
-				lightnessMin = lightnessMid;
-			}
-			else if(contrastLightnessMin > contrastLightnessMax) {
-				lightnessMax = lightnessMid;
-			}
-		}
-		else if(contrastLightnessMid > requiredScore) {
-			if(contrastLightnessMin < contrastLightnessMax) {
-				lightnessMax = lightnessMid;
-			}
-			else if(contrastLightnessMin > contrastLightnessMax) {
-				lightnessMin = lightnessMid;
-			}
-		}
-		else {
-			lightnessMin = lightnessMid;
-			lightnessMax = lightnessMid;
-			break;
+	else {
+		const lower = contrastLighter < contrastDarker ? lighter : darker;
+		const higher = contrastLighter < contrastDarker ? darker : lighter;
+		const middle = {
+			colour: new Colour(darker.colour),
+			contrasts: undefined,
+			hex: undefined
 		}
 
-		subject.oklch.l = lightnessMin;
-		contrastLightnessMin = getAltContrasts(subject).score;
-		subject.oklch.l = lightnessMax;
-		contrastLightnessMax = getAltContrasts(subject).score;
+		let previousHex = '';
+		let safeguard = 10000;
+
+		while(previousHex !== higher.hex && previousHex !== lower.hex && safeguard > 0) {
+			safeguard--;
+
+			updateColour(middle, (lower.colour.oklch.l + higher.colour.oklch.l) / 2);
+			middle.contrasts = getAltContrasts(middle.colour);
+
+			if(middle.contrasts.score < requiredScore) {
+				previousHex = lower.hex;
+				updateColour(lower, middle.colour.oklch.l);
+			}
+			else {
+				previousHex = higher.hex;
+				updateColour(higher, middle.colour.oklch.l);
+			}
+		}
+
+		return higher.colour;
 	}
-
-	return subject;
 }
 
 function updateContrastBooleanText(colourPasses) {
@@ -493,9 +490,9 @@ function temp() {
 		return;
 	}
 
-	const contrasts = getContrasts(State.colourForeground, State.colourBackground, State.fontSize, State.fontWeight, State.criterionLevel);
+	const contrasts = getContrastDetails(State);
 
-	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}`;
+	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrasts.alternative, null, '\t')}`;
 }
 
 // const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
