@@ -241,7 +241,7 @@ function updateUI(state) { // TODO
 	const contrastDetails = getContrastDetails(state);
 
 	updateContrastBooleanText(contrastDetails.colourPasses);
-	temp();
+	temp(contrastDetails);
 }
 
 function getContrastDetails(state) {
@@ -425,16 +425,20 @@ function getAlternativeColour(foreground, background, requiredScore, target, dir
 		return null;
 	}
 	else {
-		const lower = contrastLighter < contrastDarker ? lighter : darker;
-		const higher = contrastLighter < contrastDarker ? darker : lighter;
 		const middle = {
 			colour: new Colour(darker.colour),
 			contrasts: undefined,
 			hex: undefined
 		}
-
 		let previousHex = '';
 		let safeguard = 10000;
+		let lower = lighter;
+		let higher = darker;
+
+		if(contrastLighter > contrastDarker) {
+			lower = darker;
+			higher = lighter;
+		}
 
 		while(previousHex !== higher.hex && previousHex !== lower.hex && safeguard > 0) {
 			safeguard--;
@@ -478,7 +482,7 @@ function updateContrastBooleanText(colourPasses) {
 
 
 
-function temp() {
+function temp(contrastDetails) {
 	const states = new Set([
 		State.colourForeground,
 		State.colourBackground,
@@ -492,7 +496,7 @@ function temp() {
 
 	const contrasts = getContrastDetails(State);
 
-	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrasts.alternative, null, '\t')}`;
+	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrastDetails, null, '\t')}`;
 }
 
 // const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
