@@ -66,3 +66,18 @@ fieldset {
 	border: none;
 	width: max-content;
 }
+
+.show-colours {
+	display: flex;
+	gap: 2rem;
+}
+
+.show-colours * {
+	margin: 0;
+}
+
+[class^="show-colour"] {
+	width: min-content;
+	padding: 0.5rem 1rem;
+	border: 1px solid grey;
+}

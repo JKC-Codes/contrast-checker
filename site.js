@@ -442,7 +442,8 @@ function getAlternativeColour(foreground, background, requiredScore, target, dir
 
 		while(previousHex !== higher.hex && previousHex !== lower.hex && safeguard > 0) {
 			safeguard--;
-
+			console.log(higher.colour.to('oklch').toString());
+			console.log(higher.colour.toString({format: 'hex'}));
 			updateColour(middle, (lower.colour.oklch.l + higher.colour.oklch.l) / 2);
 			middle.contrasts = getAltContrasts(middle.colour);
 
@@ -495,8 +496,67 @@ function temp(contrastDetails) {
 	}
 
 	const contrasts = getContrastDetails(State);
+	const footer = document.querySelector('footer');
 
-	outputResult.innerHTML += `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrastDetails, null, '\t')}`;
+	footer.insertAdjacentHTML('afterend', `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrastDetails, null, '\t').replaceAll(/[{}]/g, '<br>&emsp;').replaceAll(',', '<br>&emsp;')}`);
+
+	if(contrastDetails.alternative !== null) {
+		const alternatives = contrastDetails.alternative.colour;
+		const colourCurrentForeground = State.colourForeground.toString();
+		const colourCurrentBackground = State.colourBackground.toString();
+		const colourForegroundLighter = alternatives.foreground.lighter;
+		const colourBackgroundLighter = alternatives.background.lighter;
+		const colourForegroundDarker = alternatives.foreground.darker;
+		const colourBackgroundDarker = alternatives.background.darker;
+		const boxCurrent = document.querySelector('.show-colour-current');
+		const boxForegroundLighter = document.querySelector('.show-colour-lighter-foreground');
+		const boxBackgroundLighter = document.querySelector('.show-colour-lighter-background');
+		const boxForegroundDarker = document.querySelector('.show-colour-darker-foreground');
+		const boxBackgroundDarker = document.querySelector('.show-colour-darker-background');
+
+		boxCurrent.style.color = colourCurrentForeground;
+		boxCurrent.style.background = colourCurrentBackground;
+
+		if(colourForegroundLighter) {
+			boxForegroundLighter.style.color = colourForegroundLighter;
+			boxForegroundLighter.style.background = colourCurrentBackground;
+			boxForegroundLighter.textContent = 'foreground: ' + colourForegroundLighter.toString({format: 'hex'});
+		}
+		else {
+			boxForegroundLighter.style.color = 'transparent';
+			boxForegroundLighter.style.background = 'transparent';
+		}
+
+		if(colourBackgroundLighter) {
+			boxBackgroundLighter.style.color = colourCurrentForeground;
+			boxBackgroundLighter.style.background = colourBackgroundLighter;
+			boxBackgroundLighter.textContent = 'background: ' + colourBackgroundLighter.toString({format: 'hex'});
+		}
+		else {
+			boxBackgroundLighter.style.color = 'transparent';
+			boxBackgroundLighter.style.background = 'transparent';
+		}
+
+		if(colourForegroundDarker) {
+			boxForegroundDarker.style.color = colourForegroundDarker;
+			boxForegroundDarker.style.background = colourCurrentBackground;
+			boxForegroundDarker.textContent = 'foreground: ' + colourForegroundDarker.toString({format: 'hex'});
+		}
+		else {
+			boxForegroundDarker.style.color = 'transparent';
+			boxForegroundDarker.style.background = 'transparent';
+		}
+
+		if(colourBackgroundDarker) {
+			boxBackgroundDarker.style.color = colourCurrentForeground;
+			boxBackgroundDarker.style.background = colourBackgroundDarker;
+			boxBackgroundDarker.textContent = 'background: ' + colourBackgroundDarker.toString({format: 'hex'});
+		}
+		else {
+			boxBackgroundDarker.style.color = 'transparent';
+			boxBackgroundDarker.style.background = 'transparent';
+		}
+	}
 }
 
 // const regexNumber = String.raw`(?:[+-]?\d+(?:\.\d+)?|\.\d+)`;
