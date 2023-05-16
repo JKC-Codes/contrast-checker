@@ -1,15 +1,16 @@
 html {
 	--font-size: 125%;
 	--line-height: 1.6;
-	--font-family: "Atkinson Hyperlegible", Arial, Helvetica, sans-serif;
+	--font-family: system-ui, sans-serif;
 	--font: var(--font-size) / var(--line-height) var(--font-family);
 	--colour-brand: midnightblue;
 	--colour-text: #333;
 	--spacing: 2rem;
 }
 
-*:where(h1, input, fieldset, legend) {
+*:where(h1, input, fieldset, legend, select) {
 	margin: 0;
+	padding: 0;
 	color: inherit;
 	font: inherit;
 }
@@ -55,10 +56,6 @@ h1 + * {
 }
 
 input {
-	font: inherit;
-}
-
-input[type="text"] {
 	letter-spacing: 0.075em;
 	padding-inline: calc(var(--spacing) / 3);
 	padding-block: calc(var(--spacing) / 8);
@@ -66,11 +63,6 @@ input[type="text"] {
 }
 
 fieldset {
-	padding: 0;
 	border: none;
 	width: max-content;
-}
-
-legend {
-	padding: 0;
 }
