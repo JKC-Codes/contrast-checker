@@ -279,6 +279,9 @@ function getContrastDetails(state) {
 }
 
 function getContrasts(foreground, background) {
+	foreground = foreground.toGamut({space: 'srgb'});
+	background = background.toGamut({space: 'srgb'});
+
 	const contrastWCAG = background.contrast(foreground, 'WCAG21');
 	const contrastAPCA = background.contrast(foreground, 'APCA');
 	const contrastBPCA = getBPCAContrast(contrastAPCA, foreground, background);
@@ -371,16 +374,7 @@ function getAlternativeColours(foreground, background, requiredScore) {
 }
 
 function getAlternativeColour(foreground, background, requiredScore, target, direction) {
-	const lighter = {
-		colour: undefined,
-		hex: undefined
-	};
-	const darker = {
-		colour: undefined,
-		hex: undefined
-	};
-
-	function getAltContrasts(subject) {
+	function getAlternativeContrasts(subject) {
 		if(target === 'foreground') {
 			return getContrasts(subject, background);
 		}
@@ -389,76 +383,58 @@ function getAlternativeColour(foreground, background, requiredScore, target, dir
 		}
 	}
 
-	function updateColour(subject, lightness) {
-		subject.colour.oklch.l = lightness;
-		subject.colour.toGamut();
+	function getAdjustedColour(subject, lightness) {
+		const newColour = new Colour(subject);
 
-		const hex = subject.colour.toString({format: 'hex'});
+		newColour.oklch.l = lightness;
 
 		// Using hex ensures that we stay with 256 possible values
-		subject.colour = new Colour(hex);
-		subject.hex = hex;
+		return new Colour(newColour.toString({format: 'hex'}));
 	}
 
-	if(target === 'foreground') {
-		darker.colour = new Colour(foreground);
-		lighter.colour = new Colour(foreground);
-	}
-	else if(target === 'background') {
-		darker.colour = new Colour(background);
-		lighter.colour = new Colour(background);
-	}
+	const targetColour = target === 'foreground' ? foreground : background;
+	let colourLow = new Colour(targetColour);
+	let colourHigh = new Colour(targetColour);
 
 	if(direction === 'lighter') {
-		updateColour(lighter, 100);
-		updateColour(darker, darker.colour.oklch.l);
+		colourHigh = getAdjustedColour(colourHigh, 100);
 	}
 	else if(direction === 'darker') {
-		updateColour(darker, -100);
-		updateColour(lighter, lighter.colour.oklch.l);
+		colourLow = getAdjustedColour(colourLow, -100);
 	}
 
-	const contrastLighter = getAltContrasts(lighter.colour).score;
-	const contrastDarker = getAltContrasts(darker.colour).score;
+	const scoreLow = getAlternativeContrasts(colourLow).score;
+	const scoreHigh = getAlternativeContrasts(colourHigh).score;
 
-	if(contrastLighter < requiredScore && contrastDarker < requiredScore) {
+	if(scoreLow < requiredScore && scoreHigh < requiredScore) {
 		return null;
 	}
-	else {
-		const middle = {
-			colour: new Colour(darker.colour),
-			contrasts: undefined,
-			hex: undefined
-		}
-		let previousHex = '';
-		let safeguard = 10000;
-		let lower = lighter;
-		let higher = darker;
-
-		if(contrastLighter > contrastDarker) {
-			lower = darker;
-			higher = lighter;
-		}
-
-		while(previousHex !== higher.hex && previousHex !== lower.hex && safeguard > 0) {
-			safeguard--;
-			console.log(higher.colour.to('oklch').toString());
-			console.log(higher.colour.toString({format: 'hex'}));
-			updateColour(middle, (lower.colour.oklch.l + higher.colour.oklch.l) / 2);
-			middle.contrasts = getAltContrasts(middle.colour);
-
-			if(middle.contrasts.score < requiredScore) {
-				previousHex = lower.hex;
-				updateColour(lower, middle.colour.oklch.l);
-			}
-			else {
-				previousHex = higher.hex;
-				updateColour(higher, middle.colour.oklch.l);
-			}
-		}
-
-		return higher.colour;
+	else if(scoreLow > scoreHigh) {
+		const temporary = colourLow;
+		colourLow = colourHigh;
+		colourHigh = temporary;
 	}
+
+	let scorePrevious = null;
+	let colourMiddle;
+	let scoreMiddle;
+
+	while(scorePrevious !== scoreMiddle) {
+		const newLightness = (colourLow.oklch.l + colourHigh.oklch.l) / 2;
+
+		scorePrevious = scoreMiddle;
+		colourMiddle = getAdjustedColour(targetColour, newLightness);
+		scoreMiddle = getAlternativeContrasts(colourMiddle).score;
+
+		if(scoreMiddle < requiredScore) {
+			colourLow = colourMiddle;
+		}
+		else if(scoreMiddle > requiredScore) {
+			colourHigh = colourMiddle;
+		}
+	}
+
+	return colourHigh;
 }
 
 function updateContrastBooleanText(colourPasses) {
@@ -500,27 +476,30 @@ function temp(contrastDetails) {
 
 	footer.insertAdjacentHTML('afterend', `<br><br>WCAG: ${contrasts.contrastWCAG}<br>BPCA: ${contrasts.contrastBPCA}<br>APCA: ${contrasts.contrastAPCA}<br>${JSON.stringify(contrastDetails, null, '\t').replaceAll(/[{}]/g, '<br>&emsp;').replaceAll(',', '<br>&emsp;')}`);
 
+
+	const boxCurrent = document.querySelector('.show-colour-current');
+	const colourCurrentForeground = State.colourForeground.toString({format: 'hex'});
+	const colourCurrentBackground = State.colourBackground.toString({format: 'hex'});
+	boxCurrent.style.color = colourCurrentForeground;
+	boxCurrent.style.background = colourCurrentBackground;
+	boxCurrent.textContent = contrastDetails.contrastWCAG;
+
 	if(contrastDetails.alternative !== null) {
 		const alternatives = contrastDetails.alternative.colour;
-		const colourCurrentForeground = State.colourForeground.toString();
-		const colourCurrentBackground = State.colourBackground.toString();
-		const colourForegroundLighter = alternatives.foreground.lighter;
-		const colourBackgroundLighter = alternatives.background.lighter;
-		const colourForegroundDarker = alternatives.foreground.darker;
-		const colourBackgroundDarker = alternatives.background.darker;
-		const boxCurrent = document.querySelector('.show-colour-current');
+		let colourForegroundLighter = alternatives.foreground.lighter;
+		let colourBackgroundLighter = alternatives.background.lighter;
+		let colourForegroundDarker = alternatives.foreground.darker;
+		let colourBackgroundDarker = alternatives.background.darker;
 		const boxForegroundLighter = document.querySelector('.show-colour-lighter-foreground');
 		const boxBackgroundLighter = document.querySelector('.show-colour-lighter-background');
 		const boxForegroundDarker = document.querySelector('.show-colour-darker-foreground');
 		const boxBackgroundDarker = document.querySelector('.show-colour-darker-background');
 
-		boxCurrent.style.color = colourCurrentForeground;
-		boxCurrent.style.background = colourCurrentBackground;
-
 		if(colourForegroundLighter) {
+			colourForegroundLighter = colourForegroundLighter.toString({format: 'hex'});
 			boxForegroundLighter.style.color = colourForegroundLighter;
 			boxForegroundLighter.style.background = colourCurrentBackground;
-			boxForegroundLighter.textContent = 'foreground: ' + colourForegroundLighter.toString({format: 'hex'});
+			boxForegroundLighter.textContent = 'foreground: ' + colourForegroundLighter;
 		}
 		else {
 			boxForegroundLighter.style.color = 'transparent';
@@ -528,9 +507,10 @@ function temp(contrastDetails) {
 		}
 
 		if(colourBackgroundLighter) {
+			colourBackgroundLighter =colourBackgroundLighter.toString({format: 'hex'});
 			boxBackgroundLighter.style.color = colourCurrentForeground;
 			boxBackgroundLighter.style.background = colourBackgroundLighter;
-			boxBackgroundLighter.textContent = 'background: ' + colourBackgroundLighter.toString({format: 'hex'});
+			boxBackgroundLighter.textContent = 'background: ' + colourBackgroundLighter;
 		}
 		else {
 			boxBackgroundLighter.style.color = 'transparent';
@@ -538,9 +518,10 @@ function temp(contrastDetails) {
 		}
 
 		if(colourForegroundDarker) {
+			colourForegroundDarker = colourForegroundDarker.toString({format: 'hex'});
 			boxForegroundDarker.style.color = colourForegroundDarker;
 			boxForegroundDarker.style.background = colourCurrentBackground;
-			boxForegroundDarker.textContent = 'foreground: ' + colourForegroundDarker.toString({format: 'hex'});
+			boxForegroundDarker.textContent = 'foreground: ' + colourForegroundDarker;
 		}
 		else {
 			boxForegroundDarker.style.color = 'transparent';
@@ -548,9 +529,10 @@ function temp(contrastDetails) {
 		}
 
 		if(colourBackgroundDarker) {
+			colourBackgroundDarker = colourBackgroundDarker.toString({format: 'hex'});
 			boxBackgroundDarker.style.color = colourCurrentForeground;
 			boxBackgroundDarker.style.background = colourBackgroundDarker;
-			boxBackgroundDarker.textContent = 'background: ' + colourBackgroundDarker.toString({format: 'hex'});
+			boxBackgroundDarker.textContent = 'background: ' + colourBackgroundDarker;
 		}
 		else {
 			boxBackgroundDarker.style.color = 'transparent';
