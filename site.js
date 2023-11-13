@@ -80,9 +80,11 @@ function init(state) { // TODO
 function initInputListeners(state) {
 	inputColourForeground.addEventListener('input', handleColourInputEvent(state));
 	inputColourBackground.addEventListener('input', handleColourInputEvent(state));
+
 	for(const inputFontSize of inputsFontSize) {
 		inputFontSize.addEventListener('input', handleFontSizeInputEvent(state));
 	}
+
 	inputFontWeight.addEventListener('change', handleFontWeightInputEvent(state));
 }
 
