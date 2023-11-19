@@ -4,6 +4,10 @@ import { bridgeRatio as getBPCARatio, sRGBtoY } from "/third-party/bridge-pca.js
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
 const inputColourBackground = document.querySelector('#input-colour-background');
+const inputColourPickerForeground = document.querySelector('#input-colour-picker-foreground');
+const inputColourPickerBackground = document.querySelector('#input-colour-picker-background');
+const buttonColourPickerForeground = document.querySelector('#button-colour-picker-foreground');
+const buttonColourPickerBackground = document.querySelector('#button-colour-picker-background');
 const inputsFontSize = document.querySelectorAll('[id|=input-font-size]');
 const inputFontWeight = document.querySelector('#input-font-weight');
 const outputResult = document.querySelector('#output-result');
@@ -13,8 +17,8 @@ const WCAGfontSizeLarge = 24; /*18pt*/
 const WCAGfontSizeMedium = 18.666666666666668; /*14pt*/
 
 const State = {
-	_colourForeground: new Colour('#1a1a1a'),
-	_colourBackground: new Colour('#fafafa'),
+	_colourForeground: null,
+	_colourBackground: null,
 	_fontSize: 16,
 	_fontWeight: 400,
 	_history: [],
@@ -69,8 +73,8 @@ function init(state) { // TODO
 		// TODO: update state with stored history
 	}
 	else {
-		inputColourForeground.value = state.colourForeground.toString({format: 'hex'});
-		inputColourBackground.value = state.colourBackground.toString({format: 'hex'});
+		inputColourForeground.value = new Colour('#333');
+		inputColourBackground.value = new Colour('#eee');
 	}
 
 	updateUI(state);
@@ -80,6 +84,17 @@ function init(state) { // TODO
 function initInputListeners(state) {
 	inputColourForeground.addEventListener('input', handleColourInputEvent(state));
 	inputColourBackground.addEventListener('input', handleColourInputEvent(state));
+	inputColourPickerForeground.addEventListener('input', handleColourInputEvent(state));
+	inputColourPickerBackground.addEventListener('input', handleColourInputEvent(state));
+
+	if('showPicker' in HTMLInputElement.prototype) {
+		buttonColourPickerForeground.addEventListener('click', () => inputColourPickerForeground.showPicker());
+		buttonColourPickerBackground.addEventListener('click', () => inputColourPickerBackground.showPicker());
+	}
+	else {
+		buttonColourPickerForeground.setAttribute('hidden', '');
+		buttonColourPickerBackground.setAttribute('hidden', '');
+	}
 
 	for(const inputFontSize of inputsFontSize) {
 		inputFontSize.addEventListener('input', handleFontSizeInputEvent(state));
@@ -92,10 +107,10 @@ function handleColourInputEvent(state) {
 	return function(event) {
 		let field;
 
-		if(event.target.id === 'input-colour-foreground') {
+		if(event.target.id === 'input-colour-foreground' || event.target.id === 'input-colour-picker-foreground') {
 			field = 'colourForeground';
 		}
-		else if(event.target.id === 'input-colour-background') {
+		else if(event.target.id === 'input-colour-background' || event.target.id === 'input-colour-picker-background') {
 			field = 'colourBackground';
 		}
 		else {
@@ -112,7 +127,7 @@ function handleColourInput(value, field, state) {
 
 	if(colour !== null) {
 		colour = new Colour(colour);
-		colour[symbolDisplayedValue] = colourString;
+		colour[symbolDisplayedValue] = value;
 	}
 
 	state[field] = colour;
@@ -160,28 +175,27 @@ function handleFontWeightInput(value, state) {
 
 function parseColour(colourString) {
 	colourString = colourString.trim();
-	const colourLength = colourString.length;
+	const isHex = colourString.startsWith('#') || new RegExp(`^[0-9a-f]{${colourString.length}}$`, 'i').test(colourString);
 
-	// If short hex code
-	if(colourString.startsWith('#') && colourLength < 4) {
-		// Expand 1 or 2 digit hex codes into full
-		colourString = '#' + colourString.slice(1).repeat(3);
-	}
-	// If hex code without a #
-	else if(new RegExp(`^[0-9a-f]{${colourLength}}$`, 'i').test(colourString)) {
-		switch(colourLength) {
-			// Expand 1 or 2 digit hex codes into full
-			case 1:
-			case 2:
-				colourString = colourString.repeat(3);
-
-			// Add # to start
-			case 3:
-			case 4:
-			case 6:
-			case 8:
-				colourString = '#' + colourString;
+	if(isHex) {
+		if(colourString.startsWith('#')) {
+			colourString = colourString.slice(1);
 		}
+
+		if(colourString.length === 1 || colourString.length === 2) {
+			colourString = colourString.repeat(3);
+		}
+
+		if(colourString.length === 3 || colourString.length === 4) {
+			const r = colourString[0].repeat(2);
+			const g = colourString[1].repeat(2);
+			const b = colourString[2].repeat(2);
+			const a = colourString[3]?.repeat(2) ?? '';
+
+			colourString = r + g + b + a;
+		}
+
+		colourString = '#' + colourString;
 	}
 
 	return colourString;
@@ -243,6 +257,7 @@ function updateUI(state) { // TODO
 	const contrastDetails = getContrastDetails(state);
 
 	updateContrastBooleanText(contrastDetails.colourPasses);
+	updateColourInputValues(state);
 	temp(contrastDetails);
 }
 
@@ -391,7 +406,7 @@ function getAlternativeColour(foreground, background, requiredScore, target, dir
 		newColour.oklch.l = lightness;
 
 		// Using hex ensures that we stay with 256 possible values
-		return new Colour(newColour.toString({format: 'hex'}));
+		return new Colour(newColour.to('srgb').toString({format: 'hex'}));
 	}
 
 	const targetColour = target === 'foreground' ? foreground : background;
@@ -450,6 +465,18 @@ function updateContrastBooleanText(colourPasses) {
 	}
 
 	outputResult.textContent = contrastBooleanText;
+}
+
+function updateColourInputValues(state) {
+	if(state.colourForeground !== null) {
+		inputColourForeground.value = state.colourForeground[symbolDisplayedValue] ?? state.colourForeground.toString();
+		inputColourPickerForeground.value = parseColour(state.colourForeground.to('srgb').toString({format: 'hex'}));
+	}
+
+	if(state.colourBackground !== null) {
+		inputColourBackground.value = state.colourBackground[symbolDisplayedValue] ?? state.colourBackground.toString();
+		inputColourPickerBackground.value = parseColour(state.colourBackground.to('srgb').toString({format: 'hex'}));
+	}
 }
 
 
