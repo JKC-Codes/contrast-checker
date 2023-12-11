@@ -1,5 +1,5 @@
-import Colour from "/third-party/color-js.js";
-import { bridgeRatio as getBPCARatio, sRGBtoY } from "/third-party/bridge-pca.js";
+import Colour from "/node_modules/colorjs.io/dist/color.js";
+import { bridgeRatio as getBPCARatio, sRGBtoY } from "/node_modules/bridge-pca/src/bridge-pca.js";
 
 
 const inputColourForeground = document.querySelector('#input-colour-foreground');
@@ -253,7 +253,7 @@ function isSameInputValue(oldValue, newValue) {
 	}
 }
 
-function updateUI(state) { // TODO
+function updateUI(state) {
 	const contrastDetails = getContrastDetails(state);
 
 	updateContrastBooleanText(contrastDetails.colourPasses);
