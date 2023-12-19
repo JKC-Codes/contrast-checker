@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Contrast Checker</title>
+	<link rel="stylesheet" href="./site.css" type="text/css">
+	<script src="./site.js" type="module"></script>
+	<link rel="modulepreload" src="./third-party/colorjs.io/dist/color.js">
+	<link rel="modulepreload" src="./third-party/bridge-pca/src/bridge-pca.js">
+	<link rel="modulepreload" src="./third-party/colorparsley/src/colorparsley.js">
+</head>
+<body>
+	<header>
+		<h1>Contrast Checker</h1>
+	</header>
+	<main>
+		<label>Text colour:
+			<input id="input-colour-foreground" type="text" required spellcheck="false">
+		</label>
+		<div>
+			<button id="button-colour-picker-foreground">Colour picker &mdash; text</button>
+			<input id="input-colour-picker-foreground" type="color" hidden>
+		</div>
+		<label>Background colour:
+			<input id="input-colour-background" type="text" required spellcheck="false">
+		</label>
+		<div>
+			<button id="button-colour-picker-background">Colour picker &mdash; background</button>
+			<input id="input-colour-picker-background" type="color" hidden>
+		</div>
+		<fieldset>
+			<legend>Font size:</legend>
+			<label>&lt; 19px
+				<input id="input-font-size-small" name="input-font-size" type="radio" value="18" checked>
+			</label>
+			<label>&ge; 19px &ndash; &lt; 24px
+				<input id="input-font-size-medium" name="input-font-size" type="radio" value="19">
+			</label>
+			<label>&ge; 24px
+				<input id="input-font-size-large" name="input-font-size" type="radio" value="24">
+			</label>
+		</fieldset>
+		<!-- <label>Font size:
+			<input id="input-font-size" type="number" value="16" min="1" step="any">
+		</label> -->
+		<label>Font weight bold or heavier:
+			<input id="input-font-weight" type="checkbox" value="700">
+		</label>
+		<!-- <label>Font weight:
+			<select id="input-font-weight">
+				<option value="100">Thin</option>
+				<option value="200">Extra-light / Ultra-light</option>
+				<option value="300">Light</option>
+				<option value="400" selected>Normal / Regular</option>
+				<option value="500">Medium</option>
+				<option value="600">Semi-bold / Demi-bold</option>
+				<option value="700">Bold</option>
+				<option value="800">Extra-bold / Ultra-bold</option>
+				<option value="900">Black / Heavy</option>
+				<option value="950">Extra Black</option>
+			</select>
+		</label> -->
+		<p>Contrast: <output id="output-result"></output></p>
+		<dl class="show-colours">
+			<div>
+				<dt>Lighter</dt>
+				<dd class="show-colour-lighter-foreground"><p>foreground</p></dd>
+				<dd class="show-colour-lighter-background"><p>background</p></dd>
+			</div>
+			<div>
+				<dt>Current</dt>
+				<dd class="show-colour-current"><p>text</p></dd>
+			</div>
+			<div>
+				<dt>Darker</dt>
+				<dd class="show-colour-darker-foreground"><p>foreground</p></dd>
+				<dd class="show-colour-darker-background"><p>background</p></dd>
+			</div>
+		</dl>
+	</main>
+	<footer>
+		<small>&copy; John Kemp-Cruz 2022&ndash;2024</small>
+	</footer>
+</body>
+</html>

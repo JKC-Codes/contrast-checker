@@ -1,0 +1,163 @@
+<!DOCTYPE html><head>
+<base lang="en-US" title="Bridge-PCA TEST">
+<title>Bridge-PCA TEST</title>
+
+	<style>
+  body {	
+		margin: 2em;
+		font-family: sans-serif;
+		font-size: 1.2em;
+		line-height: 1.5;
+		color: #c8cfc0;
+		background: #429;
+  }
+  code, pre {
+  	padding: 6px 8px 4px 12px;
+  	font-family: menlo, monospaced;
+		font-size: 16px;
+		color: #def;
+  	background: #345;
+  	}
+  pre { max-width: 640px; overflow: scroll; line-height: 1.5; }
+  .hScroll {
+    padding: 6px 14px 4px 12px;
+  	overflow: scroll;
+  	white-space: nowrap;
+  	background: #345;
+    border: 1px solid #a0a0a0; 
+  	border-radius: 10px;
+  	}
+	</style>
+</head>
+<body>
+
+<h1>Bridge-PCA Script Test</h1>
+<h3>Usage:</h3>
+<p>First color must be text, second color must be the background.</p>
+<p><code>BPCAcontrast()</code> requires Ys (display luminance)<br>
+<code>sRGBtoY()</code> requires an sRGB color array 0-255<br>
+<code>displayP3toY()</code> requires a displayP3 RGB color array 0.0-1.0<br>
+<code>adobeRGBtoY()</code> requires an Adobe98 RGB color array 0-255<br>
+<code>colorParsley()</code> parses string to an RGB color array 0-255<br>
+<code>alphaBlend()</code> blends FG color with alpha to BG, returns array<br>
+<code>calcBPCA(textString,bgString)</code> shortcut, takes strings, text allows alpha</p>
+
+<div class="hScroll">
+<code>Lc = BPCAcontrast(sRGBtoY( alphaBlend(colorParsley(color8),colorParsley(color2)) ), sRGBtoY(colorParsley(color2)));
+</code><br>
+</div>
+
+<div id="test">Enable Javascript
+<!--TEST RESULTS ARE INSERTED HERE --></div>
+
+
+<h2>TESTING YOUR IMPLEMENTATION</h2>
+
+<p>If you've implemented the code and want a quick sanity check, Here are some keystone checks with no rounding. The first color is TEXT and the second color is BACKGROUND:
+
+<p>Test Values for the 0.1.6 G constants, normal and reverse float values for each color pair.
+
+
+<p>First number is TEXT second number is BACKGROUND.
+
+<h3>TEXT vs BKGND •  EXPECTED RESULT for 0.1.6</h3>
+<pre><code>
+    #888 vs #fff  •  63.056469930209424
+    #fff vs #888  • -68.54146436644962  
+
+    #000 vs #aaa  •  58.146262578561334
+    #aaa vs #000  • -56.24113336839742
+    
+    #123 vs #def  •  91.66830811481631
+    #def vs #123  • -93.06770049484275
+
+    #123 vs #444  •   8.32326136957393
+    #234 vs #444  •  -7.526878460278154
+    </code></pre>
+These exercise all the important constants.
+</body>
+
+
+<script type="module">
+
+ import { BPCAcontrast, bridgeRatio, sRGBtoY, displayP3toY, adobeRGBtoY, alphaBlend, calcBPCA } from './bridge-pca.js';
+ 
+ import { colorParsley } from '../node_modules/colorparsley/src/colorparsley.js';
+
+let outputText = document.getElementById('test');
+
+    outputText.innerHTML = '<h3>TEST COLORS</h3>';
+
+    outputText.innerHTML += '<p>This is a test with the standardized test values</p> '
+
+let color1 = '#888', color2 = '#fff', color3 = '#000', color4 = '#aaa',
+    color5 = '#123', color6 = '#def', color7 = '#444', color8 = '#0006',
+    colorW21 = '#B5B5B5', colorW31 = '#949494', colorW451 = '#767676',
+    colorW71 = '#595959' ;
+
+let contrast1 = BPCAcontrast(sRGBtoY(colorParsley(color1)),sRGBtoY(colorParsley(color2))),
+    contrast2 = BPCAcontrast(sRGBtoY(colorParsley(color2)),sRGBtoY(colorParsley(color1))),
+    contrast3 = BPCAcontrast(sRGBtoY(colorParsley(color3)),sRGBtoY(colorParsley(color4))),
+    contrast4 = BPCAcontrast(sRGBtoY(colorParsley(color4)),sRGBtoY(colorParsley(color3))),
+    contrast5 = BPCAcontrast(sRGBtoY(colorParsley(color5)),sRGBtoY(colorParsley(color6))),
+    contrast6 = BPCAcontrast(sRGBtoY(colorParsley(color6)),sRGBtoY(colorParsley(color5))),
+    contrast7 = BPCAcontrast(sRGBtoY(colorParsley(color5)),sRGBtoY(colorParsley(color7))),
+    contrast8 = BPCAcontrast(sRGBtoY(colorParsley(color7)),sRGBtoY(colorParsley(color5))),
+    contrast9 = BPCAcontrast(sRGBtoY(alphaBlend(colorParsley(color8),colorParsley(color2))),
+                             sRGBtoY(colorParsley(color2))),
+    contrastA = calcBPCA(color8,color2),
+    contrastW21 = BPCAcontrast(sRGBtoY(colorParsley(color2)),sRGBtoY(colorParsley(colorW21))).toFixed(4),
+    contrastW31 = BPCAcontrast(sRGBtoY(colorParsley(color2)),sRGBtoY(colorParsley(colorW31))).toFixed(4),
+    contrastW451 = calcBPCA(color2,colorW451).toFixed(3),
+    contrastW71 = calcBPCA(color2,colorW71).toFixed(4);
+    
+
+let alpha1 = alphaBlend([221,238,255,0.5],colorParsley(color3)),
+    alpha2 = alphaBlend([0.86667,9.333,1.0,0.25],colorParsley(color3),false);
+
+let aSpn = "  \t<span style='color: ";
+let bSpn = "; background-color: ";
+let cSpn = ";'> & icyATOMsizedgap </span>";
+
+outputText.innerHTML +='<pre>color 1: ' + color1 + '   parsed: ' + colorParsley(color1)
+     + ' <br>color 2: ' + color2 + '     parsed: ' + colorParsley(color2)
+     + ' <br>color 3: ' + color3 + '     parsed: ' + colorParsley(color3)
+     + ' <br>color 4: ' + color4 + '     parsed: ' + colorParsley(color4)
+     + ' <br>color 5: ' + color5 + '     parsed: ' + colorParsley(color5)
+     + ' <br>color 6: ' + color6 + '     parsed: ' + colorParsley(color6)
+     + ' <br>color 7: ' + color7 + '     parsed: ' + colorParsley(color7)
+     + ' <br>color 8: ' + color8 + '     parsed: ' + colorParsley(color8)
+     + ' <br>color W31: ' + colorW31 + '     parsed: ' + colorParsley(colorW31)
+
+     + '<br><br>sRGB BPCA results • check to match the expected result'
+     + '<br><br>Colors 1 & 2   sRGB Lc ' + contrast1 + aSpn+color1+bSpn+color2+cSpn
+     + '<br>Colors 2 & 1   sRGB Lc ' + contrast2 + aSpn+color2+bSpn+color1+cSpn
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrast2) + ' (WCAG 2 compatible)'
+     + '<br><br>Colors 3 & 4   sRGB Lc ' + contrast3  + aSpn+color3+bSpn+color4+cSpn
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrast3) + ' (WCAG 2 compatible)'
+     + '<br>Colors 4 & 3   sRGB Lc ' + contrast4 + aSpn+color4+bSpn+color3+cSpn 
+     + '<br><br>Colors 5 & 6   sRGB Lc ' + contrast5 + aSpn+color5+bSpn+color6+cSpn 
+     + '<br>Colors 6 & 5   sRGB Lc ' + contrast6 + aSpn+color6+bSpn+color5+cSpn 
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrast6) + ' (WCAG 2 compatible)'
+     + '<br><br>Colors 5 & 7   sRGB Lc ' + contrast7 + aSpn+color5+bSpn+color7+cSpn 
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrast7) + ' (WCAG 2 compatible)'
+     + '<br>Colors 7 & 5   sRGB Lc ' + contrast8 + aSpn+color7+bSpn+color5+cSpn 
+     + '<br><br>ALPHA TEST '
+     + '<br><br>Colors 6 & 3 • 6 @ 50%    A   ' + alpha1 
+     + '<br>Float  6 & 3 • 6 @ 25%    A   ' + alpha2 
+     + '<br><br>Colors 8 & 2   sRGBA Lc ' + contrast9
+     + '<br><br>calcBPCA(color8,color2) ' + contrastA
+     + '<br><br>calcBPCA(colorW21,color2) Lc ' + contrastW21 + aSpn+color2+bSpn+colorW21+cSpn 
+     + '<br>calcBPCA(colorW31,color2) Lc ' + contrastW31 + aSpn+color2+bSpn+colorW31+cSpn 
+     + '<br>calcBPCA(colorW451,color2) Lc ' + contrastW451 + aSpn+color2+bSpn+colorW451+cSpn 
+     + '<br>calcBPCA(colorW71,color2) Lc ' + contrastW71 + aSpn+color2+bSpn+colorW71+cSpn 
+     + '<br><br>bridgeRatio:   ' + bridgeRatio(contrastW21) + ' (WCAG 2 compatible)'
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrastW31) + ' (WCAG 2 compatible)'
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrastW451) + ' (WCAG 2 compatible)'
+     + '<br>bridgeRatio:   ' + bridgeRatio(contrastW71) + ' (WCAG 2 compatible)'
+     + '<br><br></pre>';
+
+</script>
+
+
+

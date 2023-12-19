@@ -1,0 +1,33 @@
+{
+  "name": "bridge-pca",
+  "version": "0.1.6",
+  "description": "A Bridge for WCAG_2 contrast using APCA (Advanced Perceptual Contrast Algorithm), technology.",
+  "main": "./src/bridge-pca.js",
+  "keywords": [
+    "color",
+    "colour",
+    "CSS",
+    "contrast",
+    "design tools",
+    "WCAG",
+    "APCA",
+    "accessibility",
+    "readability"
+  ],
+  "author": "Andrew Somers",
+  "license": "W3 License",
+  "bugs": {
+    "url": "https://github.com/Myndex/SAPC-APCA/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Myndex/bridge-pca.git"
+  },
+  "homepage": "https://www.myndex.com/BPCA/",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "colorparsley": "^0.1.6"
+  }
+}

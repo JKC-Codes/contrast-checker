@@ -1,0 +1,83 @@
+html {
+	--font-size: 125%;
+	--line-height: 1.6;
+	--font-family: system-ui, sans-serif;
+	--font: var(--font-size) / var(--line-height) var(--font-family);
+	--colour-brand: midnightblue;
+	--colour-text: #333;
+	--spacing: 2rem;
+}
+
+*:where(h1, input, fieldset, legend, select) {
+	margin: 0;
+	padding: 0;
+	color: inherit;
+	font: inherit;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* + * {
+	margin-block-start: 1em;
+}
+
+html {
+	accent-color: var(--colour-brand);
+	color: var(--colour-text);
+	font: var(--font);
+	letter-spacing: 0.02em;
+	overflow-wrap: break-word;
+	scroll-behavior: smooth;
+
+	@media (prefers-reduced-motion: reduce) {
+		scroll-behavior: auto;
+	}
+}
+
+body {
+	margin: var(--spacing);
+}
+
+h1 {
+	font-size: 2em;
+	line-height: calc(var(--line-height) * 0.75);
+}
+
+*:has(+ h1) {
+	margin-block-end: calc(var(--line-height) * 1em);
+}
+
+h1 + * {
+	margin-block-start: calc(var(--line-height) * 0.5em);
+}
+
+input {
+	letter-spacing: 0.075em;
+	padding-inline: calc(var(--spacing) / 3);
+	padding-block: calc(var(--spacing) / 8);
+	font-variant-numeric: tabular-nums;
+}
+
+fieldset {
+	border: none;
+	width: max-content;
+}
+
+.show-colours {
+	display: flex;
+	gap: 2rem;
+}
+
+.show-colours * {
+	margin: 0;
+}
+
+[class^="show-colour"] {
+	width: min-content;
+	padding: 0.5rem 1rem;
+	border: 1px solid grey;
+}
