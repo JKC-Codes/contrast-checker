@@ -73,11 +73,10 @@ function init(state) { // TODO
 		// TODO: update state with stored history
 	}
 	else {
-		inputColourForeground.value = new Colour('#333');
-		inputColourBackground.value = new Colour('#eee');
+		state.colourForeground = new Colour('#333');
+		state.colourBackground = new Colour('#eee');
 	}
 
-	updateUI(state);
 	initInputListeners(state)
 }
 
@@ -104,20 +103,30 @@ function initInputListeners(state) {
 }
 
 function handleColourInputEvent(state) {
+	let pending = false;
+
 	return function(event) {
-		let field;
+		if(pending === false) {
+			pending = true;
 
-		if(event.target.id === 'input-colour-foreground' || event.target.id === 'input-colour-picker-foreground') {
-			field = 'colourForeground';
-		}
-		else if(event.target.id === 'input-colour-background' || event.target.id === 'input-colour-picker-background') {
-			field = 'colourBackground';
-		}
-		else {
-			throw new Error(`Colour input's field ID not recognised`);
-		}
+			setTimeout(function() {
+				let field;
 
-		handleColourInput(event.target.value, field, state);
+				if(event.target.id === 'input-colour-foreground' || event.target.id === 'input-colour-picker-foreground') {
+					field = 'colourForeground';
+				}
+				else if(event.target.id === 'input-colour-background' || event.target.id === 'input-colour-picker-background') {
+					field = 'colourBackground';
+				}
+				else {
+					throw new Error(`Colour input's field ID not recognised`);
+				}
+
+				handleColourInput(event.target.value, field, state);
+
+				pending = false;
+			}, 100);
+		}
 	}
 }
 
@@ -128,6 +137,9 @@ function handleColourInput(value, field, state) {
 	if(colour !== null) {
 		colour = new Colour(colour);
 		colour[symbolDisplayedValue] = value;
+
+		// https://drafts.csswg.org/css-color-4/#interpolation-alpha
+		// https://drafts.csswg.org/css-color-4/#color-conversion-code
 	}
 
 	state[field] = colour;
@@ -253,12 +265,12 @@ function isSameInputValue(oldValue, newValue) {
 	}
 }
 
-function updateUI(state) {
+function updateUI(state) { // TODO
 	const contrastDetails = getContrastDetails(state);
 
 	updateContrastBooleanText(contrastDetails.colourPasses);
 	updateColourInputValues(state);
-	temp(contrastDetails);
+	temp(contrastDetails); // TODO: remove
 }
 
 function getContrastDetails(state) {
@@ -278,7 +290,7 @@ function getContrastDetails(state) {
 
 	if(foreground !== null && background !== null && size !== null && weight !== null) {
 		const contrasts = getContrasts(foreground, background, size, weight, level);
-		const isLargeText = size >= WCAGfontSizeLarge || (size >= WCAGfontSizeMedium && weight >= 700);
+		const isLargeText = (size >= WCAGfontSizeLarge) || (size >= WCAGfontSizeMedium && weight >= 700);
 		const requiredScore = getRequiredWCAGScore(level, isLargeText);
 		const passes = contrasts.score >= requiredScore;
 
@@ -355,7 +367,7 @@ function getAlternativeFonts(level, score, size, weight) {
 	}
 
 	if(score >= getRequiredWCAGScore(level, true)) {
-		alternativeFonts.size = WCAGfontSizeLarge
+		alternativeFonts.size = WCAGfontSizeLarge;
 
 		if(weight < 700) {
 			if(size < WCAGfontSizeMedium) {
