@@ -103,29 +103,40 @@ function initInputListeners(state) {
 }
 
 function handleColourInputEvent(state) {
-	let pending = false;
+	const queue = new Map();
+	let intervalID = null;
 
 	return function(event) {
-		if(pending === false) {
-			pending = true;
+		let field;
 
-			setTimeout(function() {
-				let field;
+		if(event.target.id === 'input-colour-foreground' || event.target.id === 'input-colour-picker-foreground') {
+			field = 'colourForeground';
+		}
+		else if(event.target.id === 'input-colour-background' || event.target.id === 'input-colour-picker-background') {
+			field = 'colourBackground';
+		}
+		else {
+			throw new Error(`Colour input's field ID not recognised`);
+		}
 
-				if(event.target.id === 'input-colour-foreground' || event.target.id === 'input-colour-picker-foreground') {
-					field = 'colourForeground';
-				}
-				else if(event.target.id === 'input-colour-background' || event.target.id === 'input-colour-picker-background') {
-					field = 'colourBackground';
+		if(intervalID === null) {
+			handleColourInput(event.target.value, field, state);
+
+			intervalID = setInterval(function() {
+				if(queue.size === 0) {
+					clearInterval(intervalID);
+					intervalID = null;
 				}
 				else {
-					throw new Error(`Colour input's field ID not recognised`);
+					for(const [field, value] of queue.entries()) {
+						handleColourInput(value, field, state);
+					}
+					queue.clear();
 				}
-
-				handleColourInput(event.target.value, field, state);
-
-				pending = false;
 			}, 100);
+		}
+		else {
+			queue.set(field, event.target.value);
 		}
 	}
 }
